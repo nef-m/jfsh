@@ -145,12 +145,19 @@ func (m model) initClient() tea.Msg {
 	viper.Set("password", password)
 	viper.Set("userId", client.UserId)
 	viper.Set("token", client.Token)
-	viper.WriteConfig()
-	viper.SafeWriteConfig()
+	if err := viper.WriteConfig(); err != nil {
+		if err := viper.SafeWriteConfig(); err != nil {
+			panic(err)
+		}
+	}
 	return tea.Quit()
 }
 
 func Run(clientName, clientVersion, cfgPath string) *jellyfin.Client {
+	configDir := filepath.Join(xdg.ConfigHome, "jfsh")
+	if err := os.MkdirAll(configDir, 0o755); err != nil {
+		panic(err)
+	}
 	viper.AddConfigPath(filepath.Join(xdg.ConfigHome, "jfsh"))
 	viper.SetConfigName("jfsh")
 	viper.SetConfigType("yaml")
