@@ -1,9 +1,13 @@
 package mpv
 
-import "os/exec"
+import (
+	"os/exec"
 
-// TODO: finish the rest of this function
-func Play(filename string) {
-	c := exec.Command("mpv", filename)
+	"github.com/hacel/jfsh/jellyfin"
+)
+
+func Play(client *jellyfin.Client, item jellyfin.Item) {
+	c := exec.Command("mpv", getStreamingURL(client.Host, item))
 	c.Run()
+	// TODO: finish the rest of this function
 }

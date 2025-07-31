@@ -1,3 +1,4 @@
+// Package config is a bubbletea model for setting up the configuration file and initializing the jellyfin client
 package config
 
 import (
@@ -134,7 +135,7 @@ func (m model) initClient() tea.Msg {
 		viper.GetString("device_id"),
 		viper.GetString("client_version"),
 		viper.GetString("token"),
-		viper.GetString("userId"),
+		viper.GetString("user_id"),
 	)
 	if err != nil {
 		return err
@@ -143,7 +144,7 @@ func (m model) initClient() tea.Msg {
 	viper.Set("host", host)
 	viper.Set("username", username)
 	viper.Set("password", password)
-	viper.Set("userId", client.UserId)
+	viper.Set("user_id", client.UserID)
 	viper.Set("token", client.Token)
 	if err := viper.WriteConfig(); err != nil {
 		if err := viper.SafeWriteConfig(); err != nil {
@@ -164,10 +165,10 @@ func Run(clientName, clientVersion, cfgPath string) *jellyfin.Client {
 	viper.SetConfigFile(cfgPath) // doesn't override if cfgPath is empty
 	viper.ReadInConfig()
 	viper.Set("client_name", clientName)
-	deviceId := viper.GetString("device_id")
-	if deviceId == "" {
-		deviceId = uuid.NewString()
-		viper.Set("device_id", deviceId)
+	deviceID := viper.GetString("device_id")
+	if deviceID == "" {
+		deviceID = uuid.NewString()
+		viper.Set("device_id", deviceID)
 	}
 	device := viper.GetString("device")
 	if device == "" {

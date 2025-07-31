@@ -1,3 +1,4 @@
+// Package mpv provides functions for playing jellyfin items in mpv
 package mpv
 
 import (
@@ -7,7 +8,7 @@ import (
 	"github.com/sj14/jellyfin-go/api"
 )
 
-func getUrl(host string, item jellyfin.Item) string {
+func getStreamingURL(host string, item jellyfin.Item) string {
 	url := fmt.Sprintf("%s/videos/%s/stream?static=true", host, *item.Id)
 	return fmt.Sprintf("edl://%%%d%%%s", len(url), url)
 }

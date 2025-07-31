@@ -1,4 +1,4 @@
-// Wrapper around the `github.com/sj14/jellyfin-go/api` to make it easier to use
+// Package jellyfin is a wrapper around the `github.com/sj14/jellyfin-go/api` to make it easier to use
 package jellyfin
 
 import (
@@ -10,20 +10,20 @@ import (
 )
 
 type (
-	// Type alias because it looks nicer
+	// Item is a type alias just because it looks nicer
 	Item   = api.BaseItemDto
 	Client struct {
 		api                *api.APIClient
 		Host               string
-		UserId             string
+		UserID             string
 		Token              string
 		lastProgressReport time.Time // used for debouncing progress updates
 	}
 )
 
 // get token and user id
-func authorize(host, username, password, client, device, deviceId, version string) (token, userId string, err error) {
-	authHeader := fmt.Sprintf("MediaBrowser Client=%q, Device=%q, DeviceId=%q, Version=%q", client, device, deviceId, version)
+func authorize(host, username, password, client, device, deviceID, version string) (token, userID string, err error) {
+	authHeader := fmt.Sprintf("MediaBrowser Client=%q, Device=%q, DeviceId=%q, Version=%q", client, device, deviceID, version)
 	config := &api.Configuration{
 		Servers:       api.ServerConfigurations{{URL: host}},
 		DefaultHeader: map[string]string{"Authorization": authHeader},
@@ -37,31 +37,31 @@ func authorize(host, username, password, client, device, deviceId, version strin
 		return
 	}
 	token = *res.AccessToken.Get()
-	userId = *res.GetUser().Id
+	userID = *res.GetUser().Id
 	return
 }
 
-func NewClient(host, username, password, client, device, deviceId, version, token, userId string) (*Client, error) {
-	if token == "" || userId == "" {
-		newToken, newUserId, err := authorize(host, username, password, client, device, deviceId, version)
+func NewClient(host, username, password, client, device, deviceID, version, token, userID string) (*Client, error) {
+	if token == "" || userID == "" {
+		newToken, newUserID, err := authorize(host, username, password, client, device, deviceID, version)
 		if err != nil {
 			return nil, err
 		}
 		token = newToken
-		userId = newUserId
+		userID = newUserID
 	}
 
-	authHeader := fmt.Sprintf("MediaBrowser Client=%q, Device=%q, DeviceId=%q, Version=%q, Token=%q", client, device, deviceId, version, token)
+	authHeader := fmt.Sprintf("MediaBrowser Client=%q, Device=%q, DeviceId=%q, Version=%q, Token=%q", client, device, deviceID, version, token)
 	config := &api.Configuration{
 		Servers:       api.ServerConfigurations{{URL: host}},
 		DefaultHeader: map[string]string{"Authorization": authHeader},
 	}
 	apiClient := api.NewAPIClient(config)
-	return &Client{api: apiClient, Host: host, UserId: userId, Token: token}, nil
+	return &Client{api: apiClient, Host: host, UserID: userID, Token: token}, nil
 }
 
 func (c *Client) GetResume() ([]Item, error) {
-	res, _, err := c.api.ItemsAPI.GetResumeItems(context.Background()).UserId(c.UserId).Execute()
+	res, _, err := c.api.ItemsAPI.GetResumeItems(context.Background()).UserId(c.UserID).Execute()
 	if err != nil {
 		return nil, err
 	}
