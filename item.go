@@ -39,4 +39,4 @@ func (i item) Description() string {
 	return str.String()
 }
 
-func (i item) FilterValue() string { return *i.Name.Get() }
+func (i item) FilterValue() string { return i.Title() + i.Description() }
