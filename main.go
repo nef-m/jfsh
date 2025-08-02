@@ -13,7 +13,7 @@ const (
 )
 
 func main() {
-	cfgPath := pflag.StringP("config", "c", "", "override path to configuration file")
+	cfgPath := pflag.StringP("config", "c", filepath.Join(xdg.ConfigHome, "jfsh", "jfsh.yaml"), "config file path")
 	printVersion := pflag.BoolP("version", "v", false, "show version")
 	help := pflag.BoolP("help", "h", false, "show help")
 	pflag.Parse()

@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/adrg/xdg"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -154,28 +153,28 @@ func (m model) initClient() tea.Msg {
 	return tea.Quit()
 }
 
-func Run(clientName, clientVersion, cfgPath string) *jellyfin.Client {
-	configDir := filepath.Join(xdg.ConfigHome, "jfsh")
-	if err := os.MkdirAll(configDir, 0o755); err != nil {
+func Run(clientName, clientVersion, path string) *jellyfin.Client {
+	// auto-create config dir
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		panic(err)
 	}
-	viper.AddConfigPath(filepath.Join(xdg.ConfigHome, "jfsh"))
-	viper.SetConfigName("jfsh")
-	viper.SetConfigType("yaml")
-	viper.SetConfigFile(cfgPath) // doesn't override if cfgPath is empty
+
+	viper.SetConfigFile(path)
 	viper.ReadInConfig()
 	viper.Set("client_name", clientName)
+	viper.Set("client_version", clientVersion)
+
 	deviceID := viper.GetString("device_id")
 	if deviceID == "" {
 		deviceID = uuid.NewString()
 		viper.Set("device_id", deviceID)
 	}
+
 	device := viper.GetString("device")
 	if device == "" {
 		device, _ = os.Hostname()
 		viper.Set("device", device)
 	}
-	viper.Set("client_version", clientVersion)
 
 	form := make([]textinput.Model, 3)
 	form[host] = textinput.New()
