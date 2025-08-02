@@ -2,6 +2,7 @@
 package config
 
 import (
+	"log"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -161,6 +162,10 @@ func Run(clientName, clientVersion, path string) *jellyfin.Client {
 
 	viper.SetConfigFile(path)
 	viper.ReadInConfig()
+	if log.Default().Writer() == nil {
+		viper.DebugTo(log.Default().Writer())
+	}
+
 	viper.Set("client_name", clientName)
 	viper.Set("client_version", clientVersion)
 

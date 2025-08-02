@@ -1,9 +1,15 @@
 package main
 
 import (
+	"io"
+	"log"
+	"log/slog"
+	"path/filepath"
+
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/hacel/jfsh/config"
 
+	"github.com/adrg/xdg"
 	"github.com/spf13/pflag"
 )
 
@@ -14,6 +20,7 @@ const (
 
 func main() {
 	cfgPath := pflag.StringP("config", "c", filepath.Join(xdg.ConfigHome, "jfsh", "jfsh.yaml"), "config file path")
+	debug := pflag.StringP("debug", "d", "", "debug log file path (enables debug logging)")
 	printVersion := pflag.BoolP("version", "v", false, "show version")
 	help := pflag.BoolP("help", "h", false, "show help")
 	pflag.Parse()
@@ -29,6 +36,17 @@ func main() {
 	if *printVersion {
 		println(clientVersion)
 		return
+	}
+
+	if *debug != "" {
+		f, err := tea.LogToFile(*debug, "")
+		if err != nil {
+			panic(err)
+		}
+		defer f.Close()
+		slog.Info("enabled debug logging")
+	} else {
+		log.SetOutput(io.Discard)
 	}
 
 	// first off, run a side bubbletea model that takes care of configuration and initializing the api client
