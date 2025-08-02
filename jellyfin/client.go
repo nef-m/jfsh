@@ -81,7 +81,7 @@ func (c *Client) GetLatest() ([]Item, error) {
 		Recursive(true).
 		SortBy([]api.ItemSortBy{api.ITEMSORTBY_DATE_CREATED, api.ITEMSORTBY_NAME}).
 		IncludeItemTypes([]api.BaseItemKind{api.BASEITEMKIND_MOVIE, api.BASEITEMKIND_EPISODE}).
-		Limit(30).
+		Limit(100).
 		SortOrder([]api.SortOrder{api.SORTORDER_DESCENDING}).
 		Execute()
 	if err != nil {
