@@ -1,16 +1,7 @@
 # jfsh
 
 A terminal-based user interface for [Jellyfin](https://jellyfin.org) that lets you browse your media library and play videos directly from the command line.
-
-There's a better project called [jftui](https://github.com/Aanok/jftui) that I 'borrowed' the `libmpv` code from, it's guaranted to work better than this. I'd use it instead of this if I were you.
-The reason I had for making this is because `jftui` didn't work for me on Mac and I don't know C enough to fix it and I wanted something that works on Linux _and_ Mac, and also the fact that it's called `jftui` but it doesn't really seem like a TUI in my opinion, it's more of a 'shell'.
-So I decided to make a new project and hopefully make something that's more TUIsh and more working on Mac so I made it and called it `jfsh`.
-
-But `jfsh` is currently only on Linux and it works for the most part. I couldn't get `libmpv` to work on Mac. I'm thinking of ditching `libmpv` all together and just running `mpv` and using sockets to communicate with it. Which would drop the requirement for `libmpv` and make it run on everything.
-
-## Warning
-
-This is only working on Linux right now and there are probably a lot of bugs. Make a pull request or an issue.
+Inspired by [jftui](https://github.com/Aanok/jftui).
 
 ## Installation
 
