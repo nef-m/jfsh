@@ -14,7 +14,6 @@ import (
 )
 
 const (
-	clientName    = "jfsh"
 	clientVersion = "0.1.0"
 )
 
@@ -50,7 +49,7 @@ func main() {
 	}
 
 	// first off, run a side bubbletea model that takes care of configuration and initializing the api client
-	client := config.Run(clientName, clientVersion, *cfgPath)
+	client := config.Run(clientVersion, *cfgPath)
 	if client == nil {
 		// err handling should happen inside the config model, this means the user quit
 		return

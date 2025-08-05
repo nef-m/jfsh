@@ -130,7 +130,6 @@ func (m model) initClient() tea.Msg {
 		host,
 		username,
 		password,
-		viper.GetString("client_name"),
 		viper.GetString("device"),
 		viper.GetString("device_id"),
 		viper.GetString("client_version"),
@@ -154,7 +153,7 @@ func (m model) initClient() tea.Msg {
 	return tea.Quit()
 }
 
-func Run(clientName, clientVersion, path string) *jellyfin.Client {
+func Run(clientVersion, path string) *jellyfin.Client {
 	// auto-create config dir
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		panic(err)
@@ -166,7 +165,6 @@ func Run(clientName, clientVersion, path string) *jellyfin.Client {
 		viper.DebugTo(log.Default().Writer())
 	}
 
-	viper.Set("client_name", clientName)
 	viper.Set("client_version", clientVersion)
 
 	deviceID := viper.GetString("device_id")

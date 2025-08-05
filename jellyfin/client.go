@@ -22,8 +22,8 @@ type (
 )
 
 // get token and user id
-func authorize(host, username, password, client, device, deviceID, version string) (token, userID string, err error) {
-	authHeader := fmt.Sprintf("MediaBrowser Client=%q, Device=%q, DeviceId=%q, Version=%q", client, device, deviceID, version)
+func authorize(host, username, password, device, deviceID, version string) (token, userID string, err error) {
+	authHeader := fmt.Sprintf("MediaBrowser Client=\"jfsh\", Device=%q, DeviceId=%q, Version=%q", device, deviceID, version)
 	config := &api.Configuration{
 		Servers:       api.ServerConfigurations{{URL: host}},
 		DefaultHeader: map[string]string{"Authorization": authHeader},
@@ -41,9 +41,9 @@ func authorize(host, username, password, client, device, deviceID, version strin
 	return
 }
 
-func NewClient(host, username, password, client, device, deviceID, version, token, userID string) (*Client, error) {
+func NewClient(host, username, password, device, deviceID, version, token, userID string) (*Client, error) {
 	if token == "" || userID == "" {
-		newToken, newUserID, err := authorize(host, username, password, client, device, deviceID, version)
+		newToken, newUserID, err := authorize(host, username, password, device, deviceID, version)
 		if err != nil {
 			return nil, err
 		}
@@ -51,7 +51,7 @@ func NewClient(host, username, password, client, device, deviceID, version, toke
 		userID = newUserID
 	}
 
-	authHeader := fmt.Sprintf("MediaBrowser Client=%q, Device=%q, DeviceId=%q, Version=%q, Token=%q", client, device, deviceID, version, token)
+	authHeader := fmt.Sprintf("MediaBrowser Client=\"jfsh\", Device=%q, DeviceId=%q, Version=%q, Token=%q", device, deviceID, version, token)
 	config := &api.Configuration{
 		Servers:       api.ServerConfigurations{{URL: host}},
 		DefaultHeader: map[string]string{"Authorization": authHeader},
