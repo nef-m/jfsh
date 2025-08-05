@@ -90,6 +90,46 @@ func (c *Client) GetLatest() ([]Item, error) {
 	return res.Items, nil
 }
 
+func (c *Client) Search(query string) ([]Item, error) {
+	var items []Item
+	res, _, err := c.api.ItemsAPI.GetItems(context.Background()).
+		SearchTerm(query).
+		Recursive(true).
+		IncludeItemTypes([]api.BaseItemKind{api.BASEITEMKIND_MOVIE, api.BASEITEMKIND_EPISODE}).
+		Limit(100).
+		Execute()
+	if err != nil {
+		return nil, err
+	}
+	items = append(items, res.Items...)
+
+	// search by series name also
+	// TODO: there has to be a better way
+	res, _, err = c.api.ItemsAPI.GetItems(context.Background()).
+		SearchTerm(query).
+		Recursive(true).
+		IncludeItemTypes([]api.BaseItemKind{api.BASEITEMKIND_SERIES}).
+		Limit(100).
+		Execute()
+	if err != nil {
+		return nil, err
+	}
+	// loop over series to get episodes
+	for _, item := range res.Items {
+		res, _, err := c.api.ItemsAPI.GetItems(context.Background()).
+			ParentId(*item.Id).
+			IncludeItemTypes([]api.BaseItemKind{api.BASEITEMKIND_EPISODE}).
+			Recursive(true).
+			SortBy([]api.ItemSortBy{api.ITEMSORTBY_INDEX_NUMBER}).
+			Execute()
+		if err != nil {
+			return nil, err
+		}
+		items = append(items, res.Items...)
+	}
+	return items, nil
+}
+
 func (c *Client) ReportPlaybackStopped(item Item, pos int64) {
 	posTicks := pos * 10000000
 	if _, err := c.api.PlaystateAPI.ReportPlaybackStopped(context.Background()).PlaybackStopInfo(api.PlaybackStopInfo{

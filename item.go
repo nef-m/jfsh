@@ -1,3 +1,4 @@
+// This file contains helpers for jellyfin.Items
 package main
 
 import (
@@ -8,10 +9,7 @@ import (
 	"github.com/sj14/jellyfin-go/api"
 )
 
-// Implements bubbles/list.Item interface
-type item jellyfin.Item
-
-func (i item) Title() string {
+func getItemTitle(i jellyfin.Item) string {
 	str := &strings.Builder{}
 	switch *i.Type {
 	case api.BASEITEMKIND_MOVIE:
@@ -28,7 +26,7 @@ func (i item) Title() string {
 	return str.String()
 }
 
-func (i item) Description() string {
+func getItemDescription(i jellyfin.Item) string {
 	str := &strings.Builder{}
 	switch *i.Type {
 	case api.BASEITEMKIND_MOVIE:
@@ -38,5 +36,3 @@ func (i item) Description() string {
 	}
 	return str.String()
 }
-
-func (i item) FilterValue() string { return i.Title() + i.Description() }

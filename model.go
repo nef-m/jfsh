@@ -1,34 +1,57 @@
 package main
 
 import (
-	"github.com/charmbracelet/bubbles/list"
+	"github.com/charmbracelet/bubbles/help"
+	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/hacel/jfsh/jellyfin"
 )
 
+type tab int
+
+const (
+	Resume tab = iota
+	NextUp
+	Latest
+	Search
+	ResumeTabName = "Resume"
+	NextUpTabName = "Next Up"
+	LatestTabName = "Latest"
+	SearchTabName = "Search"
+)
+
 type model struct {
-	err error
+	keyMap KeyMap
+	help   help.Model
+
+	width  int
+	height int
 
 	client *jellyfin.Client
 
-	tabs      []string
-	activeTab int
+	currentTab  tab
+	searchInput textinput.Model
 
-	list list.Model
+	items       []jellyfin.Item
+	currentItem int
 
-	playing *item
+	playing *jellyfin.Item
+
+	err error
 }
 
 func initialModel(client *jellyfin.Client) model {
-	m := model{
-		client: client,
-		tabs:   []string{"Resume", "Next Up", "Latest"},
-		list:   list.New(nil, list.NewDefaultDelegate(), 0, 0),
+	searchInput := textinput.New()
+	searchInput.Prompt = "Search: "
+
+	return model{
+		keyMap:      defaultKeyMap(),
+		help:        help.New(),
+		client:      client,
+		searchInput: searchInput,
 	}
-	m.list.SetShowTitle(false)
-	return m
 }
 
 func (m model) Init() tea.Cmd {
-	return m.fetchActiveTabItems
+	return fetchItems(m.client, m.currentTab, m.searchInput.Value())
 }

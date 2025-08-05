@@ -1,94 +1,161 @@
 package main
 
 import (
-	"github.com/charmbracelet/bubbles/list"
+	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/hacel/jfsh/jellyfin"
 	"github.com/hacel/jfsh/mpv"
 )
 
-func (m model) fetchActiveTabItems() tea.Msg {
-	switch m.tabs[m.activeTab] {
-	case "Resume":
-		items, err := m.client.GetResume()
-		if err != nil {
-			return err
+type playbackStopped struct{}
+
+func playItem(client *jellyfin.Client, item jellyfin.Item) tea.Cmd {
+	return func() tea.Msg {
+		mpv.Play(client, item)
+		return playbackStopped{}
+	}
+}
+
+func fetchItems(client *jellyfin.Client, tab tab, searchQuery string) tea.Cmd {
+	return func() tea.Msg {
+		switch tab {
+		case Resume:
+			items, err := client.GetResume()
+			if err != nil {
+				return err
+			}
+			return items
+		case NextUp:
+			items, err := client.GetNextUp()
+			if err != nil {
+				return err
+			}
+			return items
+		case Latest:
+			items, err := client.GetLatest()
+			if err != nil {
+				return err
+			}
+			return items
+		case Search:
+			if searchQuery == "" {
+				return []jellyfin.Item{}
+			}
+			items, err := client.Search(searchQuery)
+			if err != nil {
+				return err
+			}
+			return items
+		default:
+			panic("oops, selected tab is not in switch statement")
 		}
-		return items
-	case "Next Up":
-		items, err := m.client.GetNextUp()
-		if err != nil {
-			return err
-		}
-		return items
-	case "Latest":
-		items, err := m.client.GetLatest()
-		if err != nil {
-			return err
-		}
-		return items
-	default:
-		panic("oops, selected tab is not in switch statement")
 	}
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case []jellyfin.Item:
+		m.items = msg
+		return m, nil
+	}
+
+	switch msg := msg.(type) {
 	case error:
 		m.err = msg
 
 	case []jellyfin.Item:
-		// Cast to item to hand off to list.Model
-		items := []list.Item{}
-		for _, i := range msg {
-			items = append(items, item(i))
-		}
-		return m, m.list.SetItems(items)
+		m.items = msg
+		return m, nil
 
 	case tea.WindowSizeMsg:
-		m.list.SetSize(
-			msg.Width-docStyle.GetHorizontalFrameSize(),
-			msg.Height-docStyle.GetVerticalFrameSize()-tabStyle.GetVerticalFrameSize()-1, // 1 for \n
-		)
+		m.width = msg.Width
+		m.height = msg.Height
 
 	case playbackStopped:
 		m.playing = nil
-		return m, m.fetchActiveTabItems
+		return m, nil
 
 	case tea.KeyMsg:
-		if m.list.SettingFilter() {
-			break
+		if key.Matches(msg, m.keyMap.ForceQuit) {
+			return m, tea.Quit
 		}
-		switch msg.String() {
-		case "left", "h":
-			if m.activeTab > 0 {
-				m.activeTab--
+
+		if m.currentTab == Search {
+			searching := m.searchInput.Focused()
+			if searching {
+				switch {
+				case key.Matches(msg, m.keyMap.CancelWhileSearching):
+					m.searchInput.Blur()
+					return m, nil
+				case key.Matches(msg, m.keyMap.AcceptWhileSearching):
+					m.searchInput.Blur()
+					return m, fetchItems(m.client, m.currentTab, m.searchInput.Value())
+				}
+				var cmd tea.Cmd
+				m.searchInput, cmd = m.searchInput.Update(msg)
+				return m, cmd
 			}
-			m.list.ResetSelected()
-			return m, m.fetchActiveTabItems
-		case "right", "l":
-			if m.activeTab < len(m.tabs)-1 {
-				m.activeTab++
+			switch {
+			case key.Matches(msg, m.keyMap.Search):
+				m.searchInput.Focus()
+				return m, nil
+			case key.Matches(msg, m.keyMap.ClearSearch):
+				m.searchInput.SetValue("")
+				return m, fetchItems(m.client, m.currentTab, m.searchInput.Value())
 			}
-			m.list.ResetSelected()
-			return m, m.fetchActiveTabItems
-		case "enter", "space":
-			item, ok := m.list.SelectedItem().(item)
-			if !ok {
-				panic("failed casting list.Item to `item`")
+		}
+
+		switch {
+		case key.Matches(msg, m.keyMap.NextTab):
+			if m.currentTab < Search {
+				m.currentTab++
+			} else {
+				m.currentTab = 0
 			}
+			return m, fetchItems(m.client, m.currentTab, m.searchInput.Value())
+		case key.Matches(msg, m.keyMap.PrevTab):
+			if m.currentTab > 0 {
+				m.currentTab--
+			} else {
+				m.currentTab = Search
+			}
+			return m, fetchItems(m.client, m.currentTab, m.searchInput.Value())
+		case key.Matches(msg, m.keyMap.CursorUp):
+			if m.currentItem > 0 {
+				m.currentItem--
+			}
+			return m, nil
+		case key.Matches(msg, m.keyMap.CursorDown):
+			if m.currentItem < len(m.items)-1 {
+				m.currentItem++
+			}
+			return m, nil
+		case key.Matches(msg, m.keyMap.GoToEnd):
+			m.currentItem = len(m.items) - 1
+			return m, nil
+		case key.Matches(msg, m.keyMap.GoToStart):
+			m.currentItem = 0
+			return m, nil
+
+		case key.Matches(msg, m.keyMap.Select):
+			if m.currentItem >= len(m.items) {
+				panic("selected item is out of range")
+			}
+			item := m.items[m.currentItem]
 			m.playing = &item
-			return m, func() tea.Msg {
-				mpv.Play(m.client, jellyfin.Item(item))
-				return playbackStopped{}
-			}
-		case "ctrl+c", "q":
+			return m, playItem(m.client, item)
+
+		case key.Matches(msg, m.keyMap.ShowFullHelp):
+			m.help.ShowAll = !m.help.ShowAll
+			return m, nil
+
+		case key.Matches(msg, m.keyMap.CloseFullHelp):
+			m.help.ShowAll = !m.help.ShowAll
+			return m, nil
+
+		case key.Matches(msg, m.keyMap.Quit):
 			return m, tea.Quit
 		}
 	}
-	var cmd tea.Cmd
-	m.list, cmd = m.list.Update(msg)
-	return m, cmd
+	return m, nil
 }
-
-type playbackStopped struct{}
