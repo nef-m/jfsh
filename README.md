@@ -8,7 +8,7 @@ Inspired by [jftui](https://github.com/Aanok/jftui).
 ### Prerequisites
 
 - A running Jellyfin instance.
-- `libmpv` which comes with `mpv` as far as I know.
+- `mpv` available in PATH.
 
 ### Install via go
 
