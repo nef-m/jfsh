@@ -57,8 +57,3 @@ go install github.com/hacel/jfsh@latest
 ## Configuration
 
 Configuration files are stored in `~/.config/jfsh/jfsh.yaml`, there's not really any configuration yet. That's just where the secret variables are stored.
-
-## TODO
-
-- Darwin support
-- Search
