@@ -154,4 +154,3 @@ func Play(client *jellyfin.Client, item jellyfin.Item) {
 		}
 	}
 }
-
