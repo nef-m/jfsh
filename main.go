@@ -5,6 +5,7 @@ import (
 	"log"
 	"log/slog"
 	"path/filepath"
+	"runtime/debug"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/hacel/jfsh/config"
@@ -13,13 +14,15 @@ import (
 	"github.com/spf13/pflag"
 )
 
-const (
-	clientVersion = "0.1.0"
+var (
+	version = ""
+	commit  = ""
+	date    = ""
 )
 
 func main() {
 	cfgPath := pflag.StringP("config", "c", filepath.Join(xdg.ConfigHome, "jfsh", "jfsh.yaml"), "config file path")
-	debug := pflag.StringP("debug", "d", "", "debug log file path (enables debug logging)")
+	debugPath := pflag.StringP("debug", "d", "", "debug log file path (enables debug logging)")
 	printVersion := pflag.BoolP("version", "v", false, "show version")
 	help := pflag.BoolP("help", "h", false, "show help")
 	pflag.Parse()
@@ -33,12 +36,23 @@ func main() {
 	}
 
 	if *printVersion {
-		println(clientVersion)
+		if version == "" {
+			if info, ok := debug.ReadBuildInfo(); ok {
+				version = info.Main.Version
+			}
+			println("version", version)
+		}
+		if commit != "" {
+			println("commit", commit)
+		}
+		if date != "" {
+			println("date", date)
+		}
 		return
 	}
 
-	if *debug != "" {
-		f, err := tea.LogToFile(*debug, "")
+	if *debugPath != "" {
+		f, err := tea.LogToFile(*debugPath, "")
 		if err != nil {
 			panic(err)
 		}
@@ -49,7 +63,7 @@ func main() {
 	}
 
 	// first off, run a side bubbletea model that takes care of configuration and initializing the api client
-	client := config.Run(clientVersion, *cfgPath)
+	client := config.Run(version, *cfgPath)
 	if client == nil {
 		// err handling should happen inside the config model, this means the user quit
 		return
