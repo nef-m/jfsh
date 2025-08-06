@@ -12,12 +12,12 @@ type tab int
 const (
 	Resume tab = iota
 	NextUp
-	Latest
+	RecentlyAdded
 	Search
-	ResumeTabName = "Resume"
-	NextUpTabName = "Next Up"
-	LatestTabName = "Latest"
-	SearchTabName = "Search"
+	ResumeTabName        = "Resume"
+	NextUpTabName        = "Next Up"
+	RecentlyAddedTabName = "Recently Added"
+	SearchTabName        = "Search"
 )
 
 type model struct {
@@ -35,6 +35,8 @@ type model struct {
 	items       []jellyfin.Item
 	currentItem int
 
+	currentSeries *jellyfin.Item
+
 	playing *jellyfin.Item
 
 	err error
@@ -43,15 +45,18 @@ type model struct {
 func initialModel(client *jellyfin.Client) model {
 	searchInput := textinput.New()
 	searchInput.Prompt = "Search: "
+	searchInput.Width = 40
 
-	return model{
+	m := model{
 		keyMap:      defaultKeyMap(),
 		help:        help.New(),
 		client:      client,
 		searchInput: searchInput,
 	}
+	m.updateKeys()
+	return m
 }
 
 func (m model) Init() tea.Cmd {
-	return fetchItems(m.client, m.currentTab, m.searchInput.Value())
+	return m.fetchItems()
 }

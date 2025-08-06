@@ -1,11 +1,11 @@
 package main
 
 import (
-	"fmt"
 	"math"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/ansi"
+	"github.com/hacel/jfsh/jellyfin"
 )
 
 var (
@@ -15,8 +15,8 @@ var (
 	textColor       = lipgloss.AdaptiveColor{Light: "#1a1a1a", Dark: "#ddd"}
 	dimTextColor    = lipgloss.AdaptiveColor{Light: "#A49FA5", Dark: "#777"}
 
-	tabItemStyle        = lipgloss.NewStyle().Margin(1, 1, 1, 1).Padding(0, 2).Foreground(lipgloss.Color("#ddd")).Background(blueColor)
-	currentTabItemStyle = tabItemStyle.Background(pinkColor)
+	tabStyle        = lipgloss.NewStyle().Margin(1, 1, 1, 1).Padding(0, 2).Foreground(lipgloss.Color("#ddd")).Background(blueColor)
+	currentTabStyle = tabStyle.Background(pinkColor)
 
 	searchInputStyle = lipgloss.NewStyle().Margin(0, 0, 1, 2).Foreground(textColor)
 
@@ -34,34 +34,54 @@ var (
 
 	scrollbarStyle      = lipgloss.NewStyle().Foreground(lipgloss.Color("#1a1a1a"))
 	scrollbarThumbStyle = lipgloss.NewStyle().Foreground(pinkColor)
+
+	errStyle = lipgloss.NewStyle().Foreground(brightPinkColor)
 )
 
 func (m model) View() string {
 	if m.playing != nil {
-		title := getItemTitle(*m.playing)
-		return fmt.Sprintf("Now playing %q\nExit mpv to return to menu", title)
+		messageView := lipgloss.NewStyle().Foreground(textColor).Render("Playing")
+		title := jellyfin.GetItemTitle(*m.playing)
+		titleView := lipgloss.NewStyle().Foreground(pinkColor).Render(title)
+		exitView := lipgloss.NewStyle().Foreground(dimTextColor).Render("\nExit mpv to return")
+		v := lipgloss.NewStyle().Padding(1, 2).BorderForeground(brightPinkColor).Render(
+			lipgloss.JoinVertical(lipgloss.Top, messageView, titleView, exitView),
+		)
+		return lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center, v)
 	}
 
 	var sections []string
 	availHeight := m.height
 
 	{
-		var tabs []string
-		for i, name := range []string{ResumeTabName, NextUpTabName, LatestTabName, SearchTabName} {
-			if tab(i) == m.currentTab {
-				tabs = append(tabs, currentTabItemStyle.Render(name))
-				continue
-			}
-			tabs = append(tabs, tabItemStyle.Render(name))
+		if m.err != nil {
+			sections = append(sections, errStyle.Render(m.err.Error()))
+			availHeight -= lipgloss.Height(errStyle.Render(m.err.Error()))
 		}
-		v := lipgloss.JoinHorizontal(lipgloss.Top, tabs...)
-		sections = append(sections, v)
-		availHeight -= lipgloss.Height(v)
 	}
 
 	{
-		if m.currentTab == Search {
-			v := searchInputStyle.Width(30).Render(m.searchInput.View())
+		if m.currentSeries == nil {
+			var tabs []string
+			for i, name := range []string{ResumeTabName, NextUpTabName, RecentlyAddedTabName, SearchTabName} {
+				if tab(i) == m.currentTab {
+					tabs = append(tabs, currentTabStyle.Render(name))
+					continue
+				}
+				tabs = append(tabs, tabStyle.Render(name))
+			}
+			v := lipgloss.JoinHorizontal(lipgloss.Top, tabs...)
+			sections = append(sections, v)
+			availHeight -= lipgloss.Height(v)
+
+			if m.currentTab == Search {
+				v := searchInputStyle.Render(m.searchInput.View())
+				sections = append(sections, v)
+				availHeight -= lipgloss.Height(v)
+			}
+		} else {
+			title := jellyfin.GetItemTitle(*m.currentSeries)
+			v := currentTabStyle.Render(title)
 			sections = append(sections, v)
 			availHeight -= lipgloss.Height(v)
 		}
@@ -84,8 +104,8 @@ func (m model) View() string {
 			var itemViews []string
 			for i := firstItem; i < lastItem; i++ {
 				item := m.items[i]
-				title := getItemTitle(item)
-				desc := getItemDescription(item)
+				title := jellyfin.GetItemTitle(item)
+				desc := jellyfin.GetItemDescription(item)
 
 				// Prevent text from exceeding list width
 				textwidth := m.width - 6
@@ -95,7 +115,11 @@ func (m model) View() string {
 					title = currentTitleStyle.Render(title)
 					desc = currentDescStyle.Render(desc)
 				} else {
-					title = titleStyle.Render(title)
+					if jellyfin.Watched(item) {
+						title = titleStyle.Foreground(dimTextColor).Render(title)
+					} else {
+						title = titleStyle.Render(title)
+					}
 					desc = descStyle.Render(desc)
 				}
 				itemViews = append(itemViews, title, desc)

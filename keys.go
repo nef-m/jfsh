@@ -14,6 +14,7 @@ type KeyMap struct {
 	Search      key.Binding
 	ClearSearch key.Binding
 	Select      key.Binding
+	Back        key.Binding
 
 	// Keybindings used when setting a search.
 	CancelWhileSearching key.Binding
@@ -69,6 +70,11 @@ func defaultKeyMap() KeyMap {
 			key.WithKeys("enter", "space"),
 			key.WithHelp("enter", "select"),
 		),
+		Back: key.NewBinding(
+			key.WithKeys("esc", "backspace"),
+			key.WithHelp("esc", "back"),
+			key.WithDisabled(),
+		),
 
 		// Searching.
 		CancelWhileSearching: key.NewBinding(
@@ -83,7 +89,7 @@ func defaultKeyMap() KeyMap {
 		// Toggle help.
 		ShowFullHelp: key.NewBinding(
 			key.WithKeys("?"),
-			key.WithHelp("?", "more"),
+			key.WithHelp("?", "help"),
 		),
 		CloseFullHelp: key.NewBinding(
 			key.WithKeys("?"),
@@ -92,9 +98,104 @@ func defaultKeyMap() KeyMap {
 
 		// Quitting.
 		Quit: key.NewBinding(
-			key.WithKeys("q", "esc"),
+			key.WithKeys("q"),
 			key.WithHelp("q", "quit"),
 		),
 		ForceQuit: key.NewBinding(key.WithKeys("ctrl+c")),
+	}
+}
+
+// updateKeys handles enabling and disabling of all keybinds based on UI state
+func (m *model) updateKeys() {
+	switch {
+	case m.playing != nil:
+		m.keyMap.CursorUp.SetEnabled(false)
+		m.keyMap.CursorDown.SetEnabled(false)
+		m.keyMap.NextTab.SetEnabled(false)
+		m.keyMap.PrevTab.SetEnabled(false)
+		m.keyMap.GoToStart.SetEnabled(false)
+		m.keyMap.GoToEnd.SetEnabled(false)
+		m.keyMap.Search.SetEnabled(false)
+		m.keyMap.ClearSearch.SetEnabled(false)
+		m.keyMap.Select.SetEnabled(false)
+		m.keyMap.Back.SetEnabled(false)
+		m.keyMap.CancelWhileSearching.SetEnabled(false)
+		m.keyMap.AcceptWhileSearching.SetEnabled(false)
+		m.keyMap.ShowFullHelp.SetEnabled(false)
+		m.keyMap.CloseFullHelp.SetEnabled(false)
+		m.keyMap.Quit.SetEnabled(false)
+		m.keyMap.ForceQuit.SetEnabled(false)
+
+	case m.currentSeries != nil:
+		m.keyMap.CursorUp.SetEnabled(true)
+		m.keyMap.CursorDown.SetEnabled(true)
+		m.keyMap.NextTab.SetEnabled(false)
+		m.keyMap.PrevTab.SetEnabled(false)
+		m.keyMap.GoToStart.SetEnabled(true)
+		m.keyMap.GoToEnd.SetEnabled(true)
+		m.keyMap.Search.SetEnabled(false)
+		m.keyMap.ClearSearch.SetEnabled(false)
+		m.keyMap.Select.SetEnabled(true)
+		m.keyMap.Back.SetEnabled(true)
+		m.keyMap.CancelWhileSearching.SetEnabled(false)
+		m.keyMap.AcceptWhileSearching.SetEnabled(false)
+		m.keyMap.ShowFullHelp.SetEnabled(!m.help.ShowAll)
+		m.keyMap.CloseFullHelp.SetEnabled(m.help.ShowAll)
+		m.keyMap.Quit.SetEnabled(true)
+		m.keyMap.ForceQuit.SetEnabled(true)
+
+	case m.currentTab != Search:
+		m.keyMap.CursorUp.SetEnabled(true)
+		m.keyMap.CursorDown.SetEnabled(true)
+		m.keyMap.NextTab.SetEnabled(true)
+		m.keyMap.PrevTab.SetEnabled(true)
+		m.keyMap.GoToStart.SetEnabled(true)
+		m.keyMap.GoToEnd.SetEnabled(true)
+		m.keyMap.Search.SetEnabled(false)
+		m.keyMap.ClearSearch.SetEnabled(false)
+		m.keyMap.Select.SetEnabled(true)
+		m.keyMap.Back.SetEnabled(false)
+		m.keyMap.CancelWhileSearching.SetEnabled(false)
+		m.keyMap.AcceptWhileSearching.SetEnabled(false)
+		m.keyMap.ShowFullHelp.SetEnabled(!m.help.ShowAll)
+		m.keyMap.CloseFullHelp.SetEnabled(m.help.ShowAll)
+		m.keyMap.Quit.SetEnabled(true)
+		m.keyMap.ForceQuit.SetEnabled(true)
+
+	case m.currentTab == Search && !m.searchInput.Focused():
+		m.keyMap.CursorUp.SetEnabled(true)
+		m.keyMap.CursorDown.SetEnabled(true)
+		m.keyMap.NextTab.SetEnabled(true)
+		m.keyMap.PrevTab.SetEnabled(true)
+		m.keyMap.GoToStart.SetEnabled(true)
+		m.keyMap.GoToEnd.SetEnabled(true)
+		m.keyMap.Search.SetEnabled(true)
+		m.keyMap.ClearSearch.SetEnabled(m.searchInput.Value() != "")
+		m.keyMap.Select.SetEnabled(true)
+		m.keyMap.Back.SetEnabled(false)
+		m.keyMap.CancelWhileSearching.SetEnabled(false)
+		m.keyMap.AcceptWhileSearching.SetEnabled(false)
+		m.keyMap.ShowFullHelp.SetEnabled(!m.help.ShowAll)
+		m.keyMap.CloseFullHelp.SetEnabled(m.help.ShowAll)
+		m.keyMap.Quit.SetEnabled(true)
+		m.keyMap.ForceQuit.SetEnabled(true)
+
+	case m.currentTab == Search && m.searchInput.Focused():
+		m.keyMap.CursorUp.SetEnabled(false)
+		m.keyMap.CursorDown.SetEnabled(false)
+		m.keyMap.NextTab.SetEnabled(false)
+		m.keyMap.PrevTab.SetEnabled(false)
+		m.keyMap.GoToStart.SetEnabled(false)
+		m.keyMap.GoToEnd.SetEnabled(false)
+		m.keyMap.Search.SetEnabled(false)
+		m.keyMap.ClearSearch.SetEnabled(false)
+		m.keyMap.Select.SetEnabled(false)
+		m.keyMap.Back.SetEnabled(false)
+		m.keyMap.CancelWhileSearching.SetEnabled(true)
+		m.keyMap.AcceptWhileSearching.SetEnabled(true)
+		m.keyMap.ShowFullHelp.SetEnabled(false)
+		m.keyMap.CloseFullHelp.SetEnabled(false)
+		m.keyMap.Quit.SetEnabled(false)
+		m.keyMap.ForceQuit.SetEnabled(true)
 	}
 }

@@ -13,31 +13,7 @@ import (
 	"time"
 
 	"github.com/hacel/jfsh/jellyfin"
-	"github.com/sj14/jellyfin-go/api"
 )
-
-func getStreamingURL(host string, item jellyfin.Item) string {
-	url := fmt.Sprintf("%s/videos/%s/stream?static=true", host, *item.Id)
-	return fmt.Sprintf("edl://%%%d%%%s", len(url), url)
-}
-
-func getMediaTitle(item jellyfin.Item) string {
-	title := item.GetPath()
-	switch item.GetType() {
-	case api.BASEITEMKIND_MOVIE:
-		title = fmt.Sprintf("%s (%d)", item.GetName(), item.GetProductionYear())
-	case api.BASEITEMKIND_EPISODE:
-		title = fmt.Sprintf("%s - S%d:E%d - %s (%d)", item.GetSeriesName(), item.GetParentIndexNumber(), item.GetIndexNumber(), item.GetName(), item.GetProductionYear())
-	}
-	return title
-}
-
-func getResumePosition(item jellyfin.Item) (secs int64) {
-	if item.UserData.IsSet() {
-		secs = *item.UserData.Get().PlaybackPositionTicks / 10000000
-	}
-	return
-}
 
 type request struct {
 	Command any `json:"command"`
@@ -142,14 +118,14 @@ func Play(client *jellyfin.Client, item jellyfin.Item) {
 	}
 	defer mpv.close()
 
-	mpv.setProperty("force-media-title", getMediaTitle(item))
+	mpv.setProperty("force-media-title", jellyfin.GetMediaTitle(item))
 
 	if err := mpv.observeProperty("time-pos"); err != nil {
 		panic(fmt.Sprintf("failed to observe time-pos: %v", err))
 	}
 
-	url := getStreamingURL(client.Host, item)
-	pos := getResumePosition(item)
+	url := jellyfin.GetStreamingURL(client.Host, item)
+	pos := jellyfin.GetResumePosition(item)
 	if err := mpv.loadFile(url, pos); err != nil {
 		panic(fmt.Sprintf("failed to load file: %v", err))
 	}
