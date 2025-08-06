@@ -58,3 +58,12 @@ go install github.com/hacel/jfsh@latest
 ## Configuration
 
 Configuration files are stored in `~/.config/jfsh/jfsh.yaml`, there's not really any configuration yet. That's just where the secret variables are stored.
+
+## Plans
+
+- Playlist support: Continuous playback of series episodes
+- Librariy browsing
+- Sorting
+- Filtering
+- Better search: Filter by media type, watched status, and metadata
+- Visual indicator of tab content loading
