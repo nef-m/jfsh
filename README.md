@@ -10,7 +10,11 @@ Inspired by [jftui](https://github.com/Aanok/jftui).
 - A running Jellyfin instance.
 - `mpv` available in PATH.
 
-### Install via go
+#### Download a release
+
+Download the latest pre-built binary for your platform from the [releases page](https://github.com/hacel/jfsh/releases/latest).
+
+#### Install via go
 
 ```sh
 go install github.com/hacel/jfsh@latest
