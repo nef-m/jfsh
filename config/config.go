@@ -2,6 +2,7 @@
 package config
 
 import (
+	"log/slog"
 	"os"
 	"path/filepath"
 
@@ -59,7 +60,7 @@ func Run(clientVersion, path string) *jellyfin.Client {
 	}
 
 	// short circuit if we can already make a client
-	if host != "" && username != "" && password != "" {
+	if host != "" && username != "" {
 		client, err := jellyfin.NewClient(
 			host,
 			username,
@@ -73,6 +74,7 @@ func Run(clientVersion, path string) *jellyfin.Client {
 		if err == nil {
 			return client
 		}
+		slog.Error("failed to create client", "err", err)
 	}
 
 	// run the bubbletea form model otherwise

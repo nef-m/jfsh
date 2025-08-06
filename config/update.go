@@ -59,10 +59,14 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case tea.KeyEnter:
 			if m.currentInput == len(m.inputs)-1 {
 				valid := true
-				for _, input := range m.inputs {
-					if input.Err != nil || input.Value() == "" {
-						valid = false
-					}
+				if m.inputs[hostInput].Err != nil || m.inputs[hostInput].Value() == "" {
+					valid = false
+				}
+				if m.inputs[usernameInput].Err != nil || m.inputs[usernameInput].Value() == "" {
+					valid = false
+				}
+				if m.inputs[passwordInput].Err != nil {
+					valid = false
 				}
 				if valid {
 					return m, m.initClient()

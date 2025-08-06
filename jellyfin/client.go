@@ -4,6 +4,7 @@ package jellyfin
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/sj14/jellyfin-go/api"
@@ -32,6 +33,7 @@ func authorize(host, username, password, device, deviceID, version string) (toke
 		Pw:       *api.NewNullableString(&password),
 	}).Execute()
 	if err != nil {
+		slog.Error("failed to authenticate", "err", err)
 		return
 	}
 	token = *res.AccessToken.Get()
