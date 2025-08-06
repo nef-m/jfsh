@@ -32,7 +32,7 @@ var (
 				Bold(true)
 	currentDescStyle = currentTitleStyle.Margin(0, 0, 1, 1).Foreground(pinkColor).UnsetBold()
 
-	scrollbarStyle      = lipgloss.NewStyle().Foreground(lipgloss.Color("#1a1a1a"))
+	scrollbarStyle      = lipgloss.NewStyle().Foreground(dimTextColor)
 	scrollbarThumbStyle = lipgloss.NewStyle().Foreground(pinkColor)
 
 	errStyle = lipgloss.NewStyle().Foreground(brightPinkColor)
