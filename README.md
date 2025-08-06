@@ -44,16 +44,12 @@ go install github.com/hacel/jfsh@latest
    - **Username**
    - **Password**
 
-3. **Navigate**
-
-   - Use the **arrow keys** or **`hjkl``** to move through menus.
-
-4. **Play Media**
+3. **Play Media**
 
    - Select an item and press **Enter** or **Space** to play it.
    - `mpv` will launch and begin streaming.
 
-5. **Quit**
+4. **Quit**
 
    - Press **`q`** at any time to exit jfsh.
 
