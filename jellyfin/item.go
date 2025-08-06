@@ -61,6 +61,8 @@ func GetItemTitle(i Item) string {
 		}
 	case api.BASEITEMKIND_SERIES:
 		fmt.Fprintf(str, "%s (%d)", i.GetName(), i.GetProductionYear())
+	case api.BASEITEMKIND_VIDEO:
+		fmt.Fprintf(str, "%s (%d)", i.GetName(), i.GetProductionYear())
 	}
 	return str.String()
 }
@@ -74,6 +76,8 @@ func GetItemDescription(i Item) string {
 		fmt.Fprintf(str, "Series | Rating: %.1f", i.GetCommunityRating())
 	case api.BASEITEMKIND_EPISODE:
 		fmt.Fprintf(str, "%s", i.GetName())
+	case api.BASEITEMKIND_VIDEO:
+		fmt.Fprintf(str, "Video  | Rating: %.1f | Runtime: %s", i.GetCommunityRating(), getItemRuntime(i.GetRunTimeTicks()))
 	}
 	return str.String()
 }
