@@ -2,201 +2,85 @@
 package config
 
 import (
-	"log"
-	"net/url"
 	"os"
 	"path/filepath"
-	"strings"
 
-	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 	"github.com/google/uuid"
 	"github.com/hacel/jfsh/jellyfin"
 	"github.com/spf13/viper"
 )
 
-const (
-	host = iota
-	username
-	password
-)
-
-type model struct {
-	client *jellyfin.Client
-
-	unhidden bool
-	inputs   []textinput.Model
-	focused  int
-	err      error
-}
-
-func (m model) Init() tea.Cmd {
-	return tea.Batch(
-		textinput.Blink,
-		m.initClient, // this short circuits the entire form if it succeeds
-	)
-}
-
-func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	cmds := make([]tea.Cmd, len(m.inputs))
-
-	switch msg := msg.(type) {
-	case unhideForm:
-		m.unhidden = true
-		return m, textinput.Blink
-	case tea.KeyMsg:
-		switch msg.Type {
-		case tea.KeyEnter:
-			if m.focused == len(m.inputs)-1 {
-				return m, m.initClient
-			}
-			m.focused = (m.focused + 1) % len(m.inputs)
-		case tea.KeyCtrlC, tea.KeyEsc:
-			return m, tea.Quit
-		case tea.KeyShiftTab, tea.KeyCtrlP, tea.KeyUp:
-			m.focused--
-			// Wrap around
-			if m.focused < 0 {
-				m.focused = len(m.inputs) - 1
-			}
-		case tea.KeyTab, tea.KeyCtrlN, tea.KeyDown:
-			m.focused = (m.focused + 1) % len(m.inputs)
-		}
-		for i := range m.inputs {
-			m.inputs[i].Blur()
-		}
-		m.inputs[m.focused].Focus()
-
-	// We handle errors just like any other message
-	case error:
-		m.err = msg
-		return m, nil
-	}
-
-	for i := range m.inputs {
-		m.inputs[i], cmds[i] = m.inputs[i].Update(msg)
-	}
-	return m, tea.Batch(cmds...)
-}
-
-var textStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#923FAD"))
-
-func (m model) View() string {
-	if !m.unhidden {
-		return ""
-	}
-
-	// TODO: make styling nicer
-	doc := strings.Builder{}
-	doc.WriteString(" Jellyfin\n")
-	doc.WriteString("\n")
-	doc.WriteString(" " + textStyle.Render("Host") + "\n")
-	doc.WriteString(" " + m.inputs[host].View() + "\n")
-	if m.inputs[host].Err != nil {
-		doc.WriteString(" " + m.inputs[host].Err.Error() + "\n")
-	}
-	doc.WriteString("\n")
-	doc.WriteString(" " + textStyle.Render("Username") + "\n")
-	doc.WriteString(" " + m.inputs[username].View() + "\n")
-	if m.inputs[username].Err != nil {
-		doc.WriteString(" " + m.inputs[username].Err.Error() + "\n")
-	}
-	doc.WriteString("\n")
-	doc.WriteString(" " + textStyle.Render("Password") + "\n")
-	doc.WriteString(" " + m.inputs[password].View() + "\n")
-	if m.inputs[password].Err != nil {
-		doc.WriteString(" " + m.inputs[password].Err.Error() + "\n")
-	}
-	doc.WriteString("\n")
-	if m.err != nil {
-		doc.WriteString(" " + m.err.Error() + "\n\n")
-	}
-	return doc.String()
-}
-
-var jfClient *jellyfin.Client
-
-type unhideForm struct{}
-
-func (m model) initClient() tea.Msg {
-	for _, input := range m.inputs {
-		if input.Err != nil || input.Value() == "" {
-			return unhideForm{}
-		}
-	}
-	host, username, password := m.inputs[host].Value(), m.inputs[username].Value(), m.inputs[password].Value()
-	client, err := jellyfin.NewClient(
-		host,
-		username,
-		password,
-		viper.GetString("device"),
-		viper.GetString("device_id"),
-		viper.GetString("client_version"),
-		viper.GetString("token"),
-		viper.GetString("user_id"),
-	)
-	if err != nil {
-		return err
-	}
-	jfClient = client
-	viper.Set("host", host)
-	viper.Set("username", username)
-	viper.Set("password", password)
-	viper.Set("user_id", client.UserID)
-	viper.Set("token", client.Token)
-	if err := viper.WriteConfig(); err != nil {
-		if err := viper.SafeWriteConfig(); err != nil {
-			panic(err)
-		}
-	}
-	return tea.Quit()
-}
-
 func Run(clientVersion, path string) *jellyfin.Client {
+	viper.SetConfigFile(path)
+	viper.SetConfigType("yaml")
+
 	// auto-create config dir
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		panic(err)
 	}
 
-	viper.SetConfigFile(path)
-	viper.ReadInConfig()
-	if log.Default().Writer() == nil {
-		viper.DebugTo(log.Default().Writer())
+	configModified := false
+
+	// read config file
+	if err := viper.ReadInConfig(); err != nil {
+		configModified = true
 	}
 
-	viper.Set("client_version", clientVersion)
-
-	deviceID := viper.GetString("device_id")
-	if deviceID == "" {
-		deviceID = uuid.NewString()
-		viper.Set("device_id", deviceID)
-	}
-
+	// get/set client variables
+	host := viper.GetString("host")
+	username := viper.GetString("username")
+	password := viper.GetString("password")
 	device := viper.GetString("device")
 	if device == "" {
 		device, _ = os.Hostname()
 		viper.Set("device", device)
+		configModified = true
+	}
+	deviceID := viper.GetString("device_id")
+	if deviceID == "" {
+		deviceID = uuid.NewString()
+		viper.Set("device_id", deviceID)
+		configModified = true
+	}
+	if viper.GetString("client_version") != clientVersion {
+		viper.Set("client_version", clientVersion)
+		configModified = true
+	}
+	token := viper.GetString("token")
+	userID := viper.GetString("user_id")
+
+	if configModified {
+		if err := viper.WriteConfig(); err != nil {
+			if err := viper.SafeWriteConfig(); err != nil {
+				panic(err)
+			}
+		}
 	}
 
-	form := make([]textinput.Model, 3)
-	form[host] = textinput.New()
-	form[host].Focus()
-	form[host].SetValue(viper.GetString("host"))
-	form[host].Validate = func(s string) error {
-		_, err := url.Parse(s) // this never seems to err
-		return err
+	// short circuit if we can already make a client
+	if host != "" && username != "" && password != "" {
+		client, err := jellyfin.NewClient(
+			host,
+			username,
+			password,
+			device,
+			deviceID,
+			clientVersion,
+			token,
+			userID,
+		)
+		if err == nil {
+			return client
+		}
 	}
 
-	form[username] = textinput.New()
-	form[username].SetValue(viper.GetString("username"))
-
-	form[password] = textinput.New()
-	form[password].SetValue(viper.GetString("password"))
-
-	m := model{inputs: form}
-	if _, err := tea.NewProgram(m).Run(); err != nil {
+	// run the bubbletea form model otherwise
+	m, err := tea.NewProgram(initialModel(), tea.WithAltScreen()).Run()
+	if err != nil {
 		panic(err)
 	}
-	return jfClient
+	// the model should've created a valid client
+	client := m.(model).client
+	return client
 }
