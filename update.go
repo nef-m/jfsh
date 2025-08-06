@@ -112,6 +112,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			} else {
 				m.currentTab = 0
 			}
+			m.currentItem = 0
 			return m, fetchItems(m.client, m.currentTab, m.searchInput.Value())
 		case key.Matches(msg, m.keyMap.PrevTab):
 			if m.currentTab > 0 {
@@ -119,6 +120,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			} else {
 				m.currentTab = Search
 			}
+			m.currentItem = 0
 			return m, fetchItems(m.client, m.currentTab, m.searchInput.Value())
 		case key.Matches(msg, m.keyMap.CursorUp):
 			if m.currentItem > 0 {
