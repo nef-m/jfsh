@@ -1,6 +1,6 @@
 # jfsh
 
-A terminal-based user interface for [Jellyfin](https://jellyfin.org) that lets you browse your media library and play videos directly from the command line.
+A terminal-based client for [Jellyfin](https://jellyfin.org) that lets you browse your media library and play videos via [mpv](https://mpv.io).
 Inspired by [jftui](https://github.com/Aanok/jftui).
 
 ![Demo](demo/demo.gif)
@@ -17,8 +17,8 @@ Inspired by [jftui](https://github.com/Aanok/jftui).
 
 ### Prerequisites
 
-- A running Jellyfin instance.
-- `mpv` available in PATH.
+- A running [Jellyfin](https://jellyfin.org) instance.
+- [mpv](https://mpv.io) available in PATH.
 
 #### Download a release
 
