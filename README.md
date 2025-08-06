@@ -3,6 +3,14 @@
 A terminal-based user interface for [Jellyfin](https://jellyfin.org) that lets you browse your media library and play videos directly from the command line.
 Inspired by [jftui](https://github.com/Aanok/jftui).
 
+## Features
+
+- Search!
+- Uses _your_ mpv config!
+- Resumes playback!
+- Tracks playback progress and updates jellyfin!
+- No mouse required!
+
 ## Installation
 
 ### Prerequisites
