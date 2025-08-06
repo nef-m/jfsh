@@ -90,6 +90,7 @@ func (m model) View() string {
 	var helpView string
 	{
 		helpView = m.help.View(m)
+		helpView = lipgloss.NewStyle().Margin(0, 0, 0, 2).Render(helpView)
 		availHeight -= lipgloss.Height(helpView)
 	}
 
