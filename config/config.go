@@ -72,6 +72,16 @@ func Run(clientVersion, path string) *jellyfin.Client {
 			userID,
 		)
 		if err == nil {
+			if client.Token != token || client.UserID != userID {
+				viper.Set("token", client.Token)
+				viper.Set("user_id", client.UserID)
+				slog.Info("updating token and user id", "token", client.Token, "user_id", client.UserID)
+				if err := viper.WriteConfig(); err != nil {
+					if err := viper.SafeWriteConfig(); err != nil {
+						panic(err)
+					}
+				}
+			}
 			return client
 		}
 		slog.Error("failed to create client", "err", err)
