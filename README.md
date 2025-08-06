@@ -3,6 +3,8 @@
 A terminal-based user interface for [Jellyfin](https://jellyfin.org) that lets you browse your media library and play videos directly from the command line.
 Inspired by [jftui](https://github.com/Aanok/jftui).
 
+![Demo](demo/demo.gif)
+
 ## Features
 
 - Search!
