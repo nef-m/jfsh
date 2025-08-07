@@ -46,7 +46,7 @@ func createMpv() (*mpv, error) {
 	// Wait for socket to be created
 	var conn net.Conn
 	var err error
-	for range 50 {
+	for range 300 {
 		conn, err = net.Dial("unix", socket)
 		if err == nil {
 			break
