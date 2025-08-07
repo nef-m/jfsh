@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	version = ""
+	version = "dev"
 	commit  = ""
 	date    = ""
 )
@@ -36,7 +36,7 @@ func main() {
 	}
 
 	if *printVersion {
-		if version == "" {
+		if version == "dev" {
 			if info, ok := debug.ReadBuildInfo(); ok {
 				version = info.Main.Version
 			}
