@@ -15,7 +15,12 @@ func (c *Client) GetResume() ([]Item, error) {
 }
 
 func (c *Client) GetNextUp() ([]Item, error) {
-	res, _, err := c.api.TvShowsAPI.GetNextUp(context.Background()).Execute()
+	res, _, err := c.api.TvShowsAPI.GetNextUp(context.Background()).
+		EnableTotalRecordCount(false).
+		DisableFirstEpisode(false).
+		EnableResumable(false).
+		EnableRewatching(false).
+		Execute()
 	if err != nil {
 		return nil, err
 	}
