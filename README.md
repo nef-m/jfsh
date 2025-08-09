@@ -61,6 +61,7 @@ Configuration files are stored in `~/.config/jfsh/jfsh.yaml`, there's not really
 
 ## Plans
 
+- MediaSegments API
 - Librariy browsing
 - Sorting
 - Filtering
