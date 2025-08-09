@@ -7,6 +7,9 @@ import (
 	"github.com/sj14/jellyfin-go/api"
 )
 
+// Helpers to try to contain BaseItemDto implementation from leaking out of the package without casting it to something else
+// NOTE: just cast it to something else?
+
 // Item is a type alias just because it looks nicer
 type Item = api.BaseItemDto
 
@@ -20,12 +23,9 @@ func getItemRuntime(ticks int64) string {
 	return fmt.Sprintf("%dh%dm", hours, minutes)
 }
 
-// Helpers to try to contain BaseItemDto implementation from leaking out of the package without casting it to something else
-// NOTE: just cast it to something else?
-
-func GetResumePosition(item Item) (secs int64) {
-	if item.UserData.IsSet() {
-		secs = *item.UserData.Get().PlaybackPositionTicks / 10000000
+func GetResumePosition(item Item) (ticks int64) {
+	if data, ok := item.GetUserDataOk(); ok {
+		ticks = data.GetPlaybackPositionTicks()
 	}
 	return
 }
@@ -46,51 +46,64 @@ func GetMediaTitle(item Item) string {
 	return title
 }
 
-func GetItemTitle(i Item) string {
+func GetItemTitle(item Item) string {
 	str := &strings.Builder{}
-	switch *i.Type {
+	switch item.GetType() {
 	case api.BASEITEMKIND_MOVIE:
-		fmt.Fprintf(str, "%s (%d)", i.GetName(), i.GetProductionYear())
-		if i.UserData.IsSet() && i.UserData.Get().PlayedPercentage.IsSet() {
-			fmt.Fprintf(str, " [%.f%%]", *i.GetUserData().PlayedPercentage.Get())
+		fmt.Fprintf(str, "%s (%d)", item.GetName(), item.GetProductionYear())
+		if data, ok := item.GetUserDataOk(); ok && data.GetPlayedPercentage() > 0 {
+			fmt.Fprintf(str, " [%.f%%]", data.GetPlayedPercentage())
 		}
 	case api.BASEITEMKIND_EPISODE:
-		fmt.Fprintf(str, "%s S%.2dE%.2d (%d)", i.GetSeriesName(), i.GetParentIndexNumber(), i.GetIndexNumber(), i.GetProductionYear())
-		if i.UserData.IsSet() && i.UserData.Get().PlayedPercentage.IsSet() {
-			fmt.Fprintf(str, " [%.f%%]", *i.GetUserData().PlayedPercentage.Get())
+		fmt.Fprintf(str, "%s S%.2dE%.2d (%d)", item.GetSeriesName(), item.GetParentIndexNumber(), item.GetIndexNumber(), item.GetProductionYear())
+		if data, ok := item.GetUserDataOk(); ok && data.GetPlayedPercentage() > 0 {
+			fmt.Fprintf(str, " [%.f%%]", data.GetPlayedPercentage())
 		}
 	case api.BASEITEMKIND_SERIES:
-		fmt.Fprintf(str, "%s (%d)", i.GetName(), i.GetProductionYear())
+		fmt.Fprintf(str, "%s (%d)", item.GetName(), item.GetProductionYear())
+		if data, ok := item.GetUserDataOk(); ok {
+			fmt.Fprintf(str, " [%d]", data.GetUnplayedItemCount())
+		}
 	case api.BASEITEMKIND_VIDEO:
-		fmt.Fprintf(str, "%s (%d)", i.GetName(), i.GetProductionYear())
+		fmt.Fprintf(str, "%s (%d)", item.GetName(), item.GetProductionYear())
 	}
 	return str.String()
 }
 
-func GetItemDescription(i Item) string {
+func GetItemDescription(item Item) string {
 	str := &strings.Builder{}
-	switch *i.Type {
+	switch item.GetType() {
 	case api.BASEITEMKIND_MOVIE:
-		fmt.Fprintf(str, "Movie  | Rating: %.1f | Runtime: %s", i.GetCommunityRating(), getItemRuntime(i.GetRunTimeTicks()))
+		fmt.Fprintf(str, "Movie  | Rating: %.1f | Runtime: %s", item.GetCommunityRating(), getItemRuntime(item.GetRunTimeTicks()))
 	case api.BASEITEMKIND_SERIES:
-		fmt.Fprintf(str, "Series | Rating: %.1f", i.GetCommunityRating())
+		fmt.Fprintf(str, "Series | Rating: %.1f", item.GetCommunityRating())
 	case api.BASEITEMKIND_EPISODE:
-		fmt.Fprintf(str, "%s", i.GetName())
+		fmt.Fprintf(str, "%s", item.GetName())
 	case api.BASEITEMKIND_VIDEO:
-		fmt.Fprintf(str, "Video  | Rating: %.1f | Runtime: %s", i.GetCommunityRating(), getItemRuntime(i.GetRunTimeTicks()))
+		fmt.Fprintf(str, "Video  | Rating: %.1f | Runtime: %s", item.GetCommunityRating(), getItemRuntime(item.GetRunTimeTicks()))
 	}
 	return str.String()
 }
 
-func IsSeries(i Item) bool {
-	return *i.Type == api.BASEITEMKIND_SERIES
+func IsMovie(item Item) bool {
+	return item.GetType() == api.BASEITEMKIND_MOVIE
 }
 
-func Watched(i Item) bool {
-	if i.UserData.IsSet() {
-		if i.UserData.Get().GetPlayed() {
-			return true
-		}
+func IsSeries(item Item) bool {
+	return item.GetType() == api.BASEITEMKIND_SERIES
+}
+
+func IsEpisode(item Item) bool {
+	return item.GetType() == api.BASEITEMKIND_EPISODE
+}
+
+func IsVideo(item Item) bool {
+	return item.GetType() == api.BASEITEMKIND_VIDEO
+}
+
+func Watched(item Item) bool {
+	if data, ok := item.GetUserDataOk(); ok {
+		return data.GetPlayed()
 	}
 	return false
 }

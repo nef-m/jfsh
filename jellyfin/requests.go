@@ -2,7 +2,6 @@ package jellyfin
 
 import (
 	"context"
-	"time"
 
 	"github.com/sj14/jellyfin-go/api"
 )
@@ -37,12 +36,12 @@ func (c *Client) GetRecentlyAdded() ([]Item, error) {
 	return res.Items, nil
 }
 
-func (c *Client) GetEpisodes(seriesID string) ([]Item, error) {
-	res, _, err := c.api.ItemsAPI.GetItems(context.Background()).
-		Recursive(true).
-		ParentId(seriesID).
-		IncludeItemTypes([]api.BaseItemKind{api.BASEITEMKIND_EPISODE}).
-		SortBy([]api.ItemSortBy{api.ITEMSORTBY_PARENT_INDEX_NUMBER, api.ITEMSORTBY_INDEX_NUMBER}).
+func (c *Client) GetEpisodes(item Item) ([]Item, error) {
+	seriesID := item.GetSeriesId()
+	if item.GetType() == api.BASEITEMKIND_SERIES {
+		seriesID = item.GetId()
+	}
+	res, _, err := c.api.TvShowsAPI.GetEpisodes(context.Background(), seriesID).
 		Execute()
 	if err != nil {
 		return nil, err
@@ -63,25 +62,18 @@ func (c *Client) Search(query string) ([]Item, error) {
 	return res.Items, nil
 }
 
-func (c *Client) ReportPlaybackStopped(item Item, pos int64) {
-	posTicks := pos * 10000000
-	if _, err := c.api.PlaystateAPI.ReportPlaybackStopped(context.Background()).PlaybackStopInfo(api.PlaybackStopInfo{
+func (c *Client) ReportPlaybackStopped(item Item, ticks int64) error {
+	_, err := c.api.PlaystateAPI.ReportPlaybackStopped(context.Background()).PlaybackStopInfo(api.PlaybackStopInfo{
 		ItemId:        item.Id,
-		PositionTicks: *api.NewNullableInt64(&posTicks),
-	}).Execute(); err != nil {
-		panic(err)
-	}
+		PositionTicks: *api.NewNullableInt64(&ticks),
+	}).Execute()
+	return err
 }
 
-func (c *Client) ReportPlaybackProgress(item Item, pos int64) {
-	if time.Since(c.lastProgressReport) < time.Second*3 { // debounce
-		return
-	}
-	posTicks := pos * 10000000
-	if _, err := c.api.PlaystateAPI.ReportPlaybackProgress(context.Background()).PlaybackProgressInfo(api.PlaybackProgressInfo{
+func (c *Client) ReportPlaybackProgress(item Item, ticks int64) error {
+	_, err := c.api.PlaystateAPI.ReportPlaybackProgress(context.Background()).PlaybackProgressInfo(api.PlaybackProgressInfo{
 		ItemId:        item.Id,
-		PositionTicks: *api.NewNullableInt64(&posTicks),
-	}).Execute(); err != nil {
-		panic(err)
-	}
+		PositionTicks: *api.NewNullableInt64(&ticks),
+	}).Execute()
+	return err
 }

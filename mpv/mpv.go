@@ -5,6 +5,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net"
 	"os"
 	"os/exec"
@@ -21,12 +22,13 @@ type request struct {
 }
 
 type response struct {
-	Error  string `json:"error"`
-	ID     int    `json:"request_id,omitempty"`
-	Event  string `json:"event,omitempty"`
-	Name   string `json:"name,omitempty"`
-	Reason string `json:"reason,omitempty"`
-	Data   any    `json:"data"`
+	Error      string `json:"error"`
+	ID         int    `json:"request_id,omitempty"`
+	Event      string `json:"event,omitempty"`
+	Name       string `json:"name,omitempty"`
+	Reason     string `json:"reason,omitempty"`
+	Data       any    `json:"data"`
+	PlaylistID int    `json:"playlist_entry_id,omitempty"`
 }
 
 type mpv struct {
@@ -103,34 +105,75 @@ func (c *mpv) observeProperty(name string) error {
 	return c.send([]any{"observe_property", 1, name})
 }
 
-func (c *mpv) loadFile(url string, pos int64) error {
-	cmd := []any{"loadfile", url, "replace"}
-	if pos > 0 {
-		cmd = append(cmd, "0", "start="+strconv.FormatInt(pos, 10))
-	}
+func (c *mpv) prependFile(url, title string) error {
+	cmd := []any{"loadfile", url, "insert-at", 0, map[string]any{
+		"force-media-title": title,
+	}}
 	return c.send(cmd)
 }
 
-func Play(client *jellyfin.Client, item jellyfin.Item) {
+func (c *mpv) appendFile(url, title string) error {
+	cmd := []any{"loadfile", url, "append", 0, map[string]any{
+		"force-media-title": title,
+	}}
+	return c.send(cmd)
+}
+
+func (c *mpv) playFile(url, title string, start float64) error {
+	cmd := []any{"loadfile", url, "replace", 0, map[string]any{
+		"force-media-title": title,
+		"start":             strconv.FormatFloat(start, 'f', 6, 64),
+	}}
+	return c.send(cmd)
+}
+
+func Play(client *jellyfin.Client, items []jellyfin.Item, index int) {
 	mpv, err := createMpv()
 	if err != nil {
 		panic(fmt.Sprintf("failed to create mpv client: %v", err))
 	}
 	defer mpv.close()
 
-	mpv.setProperty("force-media-title", jellyfin.GetMediaTitle(item))
-
+	// makes mpv report file posisiton
 	if err := mpv.observeProperty("time-pos"); err != nil {
 		panic(fmt.Sprintf("failed to observe time-pos: %v", err))
 	}
 
-	url := jellyfin.GetStreamingURL(client.Host, item)
-	pos := jellyfin.GetResumePosition(item)
-	if err := mpv.loadFile(url, pos); err != nil {
+	// keeps track of the playlist index of items as they get loaded into mpv
+	playlistIDs := make([]int, 0, len(items))
+
+	// load file specified by index
+	url := jellyfin.GetStreamingURL(client.Host, items[index])
+	start := float64(jellyfin.GetResumePosition(items[index])) / 10_000_000 // ticks to seconds
+	title := jellyfin.GetMediaTitle(items[index])
+	if err := mpv.playFile(url, title, start); err != nil {
 		panic(fmt.Sprintf("failed to load file: %v", err))
 	}
+	playlistIDs = append(playlistIDs, index)
 
-	var progress int64
+	// append to playlist the files after the index
+	for i := index + 1; i < len(items); i++ {
+		url := jellyfin.GetStreamingURL(client.Host, items[i])
+		title := jellyfin.GetMediaTitle(items[i])
+		if err := mpv.appendFile(url, title); err != nil {
+			panic(fmt.Sprintf("failed to append file: %v", err))
+		}
+		playlistIDs = append(playlistIDs, i)
+	}
+
+	// prepend to playlist the files before the index
+	for i := index - 1; i >= 0; i-- {
+		url := jellyfin.GetStreamingURL(client.Host, items[i])
+		title := jellyfin.GetMediaTitle(items[i])
+		if err := mpv.prependFile(url, title); err != nil {
+			panic(fmt.Sprintf("failed to load file: %v", err))
+		}
+		playlistIDs = append(playlistIDs, i)
+	}
+
+	progress := float64(0)
+	lastProgressUpdate := time.Now()
+	item := items[index]
 	for mpv.scanner.Scan() {
 		line := mpv.scanner.Text()
 		if line == "" {
@@ -138,22 +181,51 @@ func Play(client *jellyfin.Client, item jellyfin.Item) {
 		}
 		var response response
 		if err := json.Unmarshal([]byte(line), &response); err != nil {
+			slog.Error("failed to unmarshal response", "line", line, "err", err)
 			continue
 		}
+
 		switch response.Event {
 		case "property-change":
-			if response.Name == "time-pos" && response.Data != nil {
-				if pos, ok := response.Data.(float64); ok {
-					progress = int64(pos)
-					client.ReportPlaybackProgress(item, progress)
+			switch response.Name {
+			case "time-pos":
+				if time.Since(lastProgressUpdate) < 3*time.Second {
+					// debounce
+					continue
 				}
+				pos, ok := response.Data.(float64)
+				if !ok {
+					slog.Error("failed to parse time-pos data as float64", "line", line, "data", response.Data)
+					continue
+				}
+				progress = pos * 10_000_000 // seconds to ticks
+				if err := client.ReportPlaybackProgress(item, int64(progress)); err != nil {
+					slog.Error("failed to report playback progress", "err", err)
+					continue
+				}
+				slog.Info("reported progress", "item", item.GetName(), "pos", pos)
+				lastProgressUpdate = time.Now()
 			}
-		case "end-file":
-			client.ReportPlaybackStopped(item, progress)
-			return
-		case "shutdown":
-			client.ReportPlaybackStopped(item, progress)
-			return
+
+		case "start-file":
+			id := response.PlaylistID - 1
+			if id >= len(playlistIDs) {
+				slog.Error("start-file event for unknown playlist id", "id", response.PlaylistID)
+				return
+			}
+			newItem := items[playlistIDs[response.PlaylistID-1]]
+			slog.Info("received", "event", response.Event, "playlist_id", response.PlaylistID, "index", playlistIDs[response.PlaylistID-1], "current_item", item.GetName(), "new_item", newItem.GetName())
+			item = newItem
+
+		case "seek":
+			slog.Info("received", "event", response.Name, "item", item.GetName())
+			lastProgressUpdate = time.Time{}
+
+		case "end-file", "shutdown":
+			slog.Info("received", "event", response.Event, "item", item.GetName())
+			if err := client.ReportPlaybackStopped(item, int64(progress)); err != nil {
+				slog.Error("failed to report playback stopped", "err", err)
+			}
 		}
 	}
 }

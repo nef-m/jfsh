@@ -61,7 +61,6 @@ Configuration files are stored in `~/.config/jfsh/jfsh.yaml`, there's not really
 
 ## Plans
 
-- Playlist support: Continuous playback of series episodes
 - Librariy browsing
 - Sorting
 - Filtering

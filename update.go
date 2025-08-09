@@ -1,6 +1,8 @@
 package main
 
 import (
+	"slices"
+
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/hacel/jfsh/jellyfin"
@@ -12,8 +14,23 @@ type playbackStopped struct{}
 func (m *model) playItem() tea.Cmd {
 	client := m.client
 	item := m.items[m.currentItem]
+	if jellyfin.IsEpisode(item) {
+		return func() tea.Msg {
+			// get all episodes of the series and find the index of selected episode
+			items, err := client.GetEpisodes(item)
+			if err != nil {
+				return err
+			}
+			idx := slices.IndexFunc(items, func(i jellyfin.Item) bool {
+				return item.GetId() == i.GetId()
+			})
+			idx = max(0, idx) // sanity check
+			mpv.Play(client, items, idx)
+			return playbackStopped{}
+		}
+	}
 	return func() tea.Msg {
-		mpv.Play(client, item)
+		mpv.Play(client, []jellyfin.Item{item}, 0)
 		return playbackStopped{}
 	}
 }
@@ -21,9 +38,8 @@ func (m *model) playItem() tea.Cmd {
 func (m *model) fetchItems() tea.Cmd {
 	client := m.client
 	if m.currentSeries != nil {
-		seriesID := *m.currentSeries.Id
 		return func() tea.Msg {
-			items, err := client.GetEpisodes(seriesID)
+			items, err := client.GetEpisodes(*m.currentSeries)
 			if err != nil {
 				return err
 			}

@@ -5,18 +5,16 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"time"
 
 	"github.com/sj14/jellyfin-go/api"
 )
 
 type (
 	Client struct {
-		api                *api.APIClient
-		Host               string
-		UserID             string
-		Token              string
-		lastProgressReport time.Time // used for debouncing progress updates
+		api    *api.APIClient
+		Host   string
+		UserID string
+		Token  string
 	}
 )
 
