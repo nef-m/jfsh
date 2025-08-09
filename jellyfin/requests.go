@@ -62,6 +62,14 @@ func (c *Client) Search(query string) ([]Item, error) {
 	return res.Items, nil
 }
 
+func (c *Client) ReportPlaybackStart(item Item, ticks int64) error {
+	_, err := c.api.PlaystateAPI.ReportPlaybackStart(context.Background()).PlaybackStartInfo(api.PlaybackStartInfo{
+		ItemId:        item.Id,
+		PositionTicks: *api.NewNullableInt64(&ticks),
+	}).Execute()
+	return err
+}
+
 func (c *Client) ReportPlaybackStopped(item Item, ticks int64) error {
 	_, err := c.api.PlaystateAPI.ReportPlaybackStopped(context.Background()).PlaybackStopInfo(api.PlaybackStopInfo{
 		ItemId:        item.Id,

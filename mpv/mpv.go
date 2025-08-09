@@ -16,6 +16,14 @@ import (
 	"github.com/hacel/jfsh/jellyfin"
 )
 
+func secondsToTicks(seconds float64) int64 {
+	return int64(seconds * 10_000_000)
+}
+
+func ticksToSeconds(ticks int64) float64 {
+	return float64(ticks) / 10_000_000
+}
+
 type request struct {
 	Command any `json:"command"`
 	ID      int `json:"request_id,omitempty"`
@@ -144,7 +152,7 @@ func Play(client *jellyfin.Client, items []jellyfin.Item, index int) {
 
 	// load file specified by index
 	url := jellyfin.GetStreamingURL(client.Host, items[index])
-	start := float64(jellyfin.GetResumePosition(items[index])) / 10_000_000 // ticks to seconds
+	start := ticksToSeconds(jellyfin.GetResumePosition(items[index]))
 	title := jellyfin.GetMediaTitle(items[index])
 	if err := mpv.playFile(url, title, start); err != nil {
 		panic(fmt.Sprintf("failed to load file: %v", err))
@@ -171,7 +179,7 @@ func Play(client *jellyfin.Client, items []jellyfin.Item, index int) {
 		playlistIDs = append(playlistIDs, i)
 	}
 
-	progress := float64(0)
+	pos := float64(0)
 	lastProgressUpdate := time.Now()
 	item := items[index]
 	for mpv.scanner.Scan() {
@@ -193,13 +201,13 @@ func Play(client *jellyfin.Client, items []jellyfin.Item, index int) {
 					// debounce
 					continue
 				}
-				pos, ok := response.Data.(float64)
+				data, ok := response.Data.(float64)
 				if !ok {
 					slog.Error("failed to parse time-pos data as float64", "line", line, "data", response.Data)
 					continue
 				}
-				progress = pos * 10_000_000 // seconds to ticks
-				if err := client.ReportPlaybackProgress(item, int64(progress)); err != nil {
+				pos = data
+				if err := client.ReportPlaybackProgress(item, secondsToTicks(pos)); err != nil {
 					slog.Error("failed to report playback progress", "err", err)
 					continue
 				}
@@ -208,14 +216,21 @@ func Play(client *jellyfin.Client, items []jellyfin.Item, index int) {
 			}
 
 		case "start-file":
+			// figure out what item is being played
 			id := response.PlaylistID - 1
 			if id >= len(playlistIDs) {
 				slog.Error("start-file event for unknown playlist id", "id", response.PlaylistID)
+				// user probably loaded something manually
 				return
 			}
-			newItem := items[playlistIDs[response.PlaylistID-1]]
-			slog.Info("received", "event", response.Event, "playlist_id", response.PlaylistID, "index", playlistIDs[response.PlaylistID-1], "current_item", item.GetName(), "new_item", newItem.GetName())
-			item = newItem
+			item = items[playlistIDs[response.PlaylistID-1]]
+			slog.Info("received", "event", response.Event, "playlist_id", response.PlaylistID, "index", playlistIDs[response.PlaylistID-1], "item", item.GetName())
+			// report playback start
+			if err := client.ReportPlaybackStart(item, secondsToTicks(pos)); err != nil {
+				slog.Error("failed to report playback progress", "err", err)
+				continue
+			}
+			slog.Info("reported progress", "item", item.GetName(), "pos", pos)
 
 		case "seek":
 			slog.Info("received", "event", response.Name, "item", item.GetName())
@@ -223,7 +238,7 @@ func Play(client *jellyfin.Client, items []jellyfin.Item, index int) {
 
 		case "end-file", "shutdown":
 			slog.Info("received", "event", response.Event, "item", item.GetName())
-			if err := client.ReportPlaybackStopped(item, int64(progress)); err != nil {
+			if err := client.ReportPlaybackStopped(item, secondsToTicks(pos)); err != nil {
 				slog.Error("failed to report playback stopped", "err", err)
 			}
 		}
