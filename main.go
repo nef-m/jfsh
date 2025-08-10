@@ -15,12 +15,19 @@ import (
 )
 
 var (
-	version = "dev"
+	version = "unknown"
 	commit  = ""
 	date    = ""
 )
 
 func main() {
+	// try to set version from build info
+	if version == "unknown" {
+		if info, ok := debug.ReadBuildInfo(); ok {
+			version = info.Main.Version
+		}
+	}
+
 	cfgPath := pflag.StringP("config", "c", filepath.Join(xdg.ConfigHome, "jfsh", "jfsh.yaml"), "config file path")
 	debugPath := pflag.StringP("debug", "d", "", "debug log file path (enables debug logging)")
 	printVersion := pflag.BoolP("version", "v", false, "show version")
@@ -36,12 +43,7 @@ func main() {
 	}
 
 	if *printVersion {
-		if version == "dev" {
-			if info, ok := debug.ReadBuildInfo(); ok {
-				version = info.Main.Version
-			}
-			println("version", version)
-		}
+		println("version", version)
 		if commit != "" {
 			println("commit", commit)
 		}
