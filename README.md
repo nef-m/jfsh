@@ -58,7 +58,11 @@ go install github.com/hacel/jfsh@latest
 
 ## Configuration
 
-Configuration files are stored in `$XDG_CONFIG_DIR/jfsh/jfsh.yaml`.
+Configuration files are stored in:
+
+- **Linux**: `$XDG_CONFIG_HOME/jfsh/jfsh.yaml` (defaults to `~/.config/jfsh/jfsh.yaml`)
+- **macOS**: `$XDG_CONFIG_HOME/jfsh/jfsh.yaml` (defaults to `~/Library/Application Support/jfsh/jfsh.yaml`)
+- **Windows**: `$XDG_CONFIG_HOME/jfsh/jfsh.yaml` (defaults to `%APPDATA%/jfsh/jfsh.yaml`)
 
 ```yaml
 host: http://localhost:8096
