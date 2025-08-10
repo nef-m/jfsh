@@ -64,7 +64,7 @@ Configuration files are stored in `$XDG_CONFIG_DIR/jfsh/jfsh.yaml`.
 host: http://localhost:8096
 username: me
 password: hunter2
-device: vee # Device name to report to jellyfin (default: hostname)
+device: mycomputer # Device name to report to jellyfin (default: hostname)
 skip_segments: # Segments to automatically skip (default: [])
   - Recap
   - Preview
