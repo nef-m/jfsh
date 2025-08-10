@@ -30,6 +30,7 @@ type model struct {
 
 func initialModel() model {
 	form := make([]textinput.Model, 3)
+
 	form[hostInput] = textinput.New()
 	form[hostInput].Focus()
 	form[hostInput].Prompt = ""
@@ -47,12 +48,16 @@ func initialModel() model {
 		}
 		return nil
 	}
+
 	form[usernameInput] = textinput.New()
 	form[usernameInput].Prompt = ""
 	form[usernameInput].SetValue(viper.GetString("username"))
+
 	form[passwordInput] = textinput.New()
 	form[passwordInput].Prompt = ""
+	form[passwordInput].EchoMode = textinput.EchoPassword
 	form[passwordInput].SetValue(viper.GetString("password"))
+
 	return model{inputs: form}
 }
 
