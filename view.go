@@ -12,6 +12,7 @@ var (
 	blueColor       = lipgloss.Color("#000B25")
 	pinkColor       = lipgloss.Color("#923FAD")
 	brightPinkColor = lipgloss.Color("#B266D4")
+	errColor        = lipgloss.Color("#aa0000")
 	textColor       = lipgloss.AdaptiveColor{Light: "#1a1a1a", Dark: "#ddd"}
 	dimTextColor    = lipgloss.AdaptiveColor{Light: "#A49FA5", Dark: "#777"}
 
@@ -35,7 +36,7 @@ var (
 	scrollbarStyle      = lipgloss.NewStyle().Foreground(dimTextColor)
 	scrollbarThumbStyle = lipgloss.NewStyle().Foreground(pinkColor)
 
-	errStyle = lipgloss.NewStyle().Foreground(brightPinkColor)
+	errStyle = lipgloss.NewStyle().Foreground(errColor)
 )
 
 func (m model) View() string {
@@ -55,8 +56,10 @@ func (m model) View() string {
 
 	{
 		if m.err != nil {
-			sections = append(sections, errStyle.Render(m.err.Error()))
-			availHeight -= lipgloss.Height(errStyle.Render(m.err.Error()))
+			v := errStyle.Render("Error: " + m.err.Error())
+			v = ansi.Wordwrap(v, m.width, "")
+			sections = append(sections, v)
+			availHeight -= lipgloss.Height(v)
 		}
 	}
 
