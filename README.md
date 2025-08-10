@@ -11,6 +11,7 @@ Inspired by [jftui](https://github.com/Aanok/jftui).
 - Uses _your_ mpv config!
 - Resumes playback!
 - Tracks playback progress and updates jellyfin!
+- Automatic segment (intro, etc.) skipping!
 - No mouse required!
 
 ## Installation
@@ -57,12 +58,28 @@ go install github.com/hacel/jfsh@latest
 
 ## Configuration
 
-Configuration files are stored in `~/.config/jfsh/jfsh.yaml`, there's not really any configuration yet. That's just where the secret variables are stored.
+Configuration files are stored in `$XDG_CONFIG_DIR/jfsh/jfsh.yaml`.
+
+```yaml
+host: http://localhost:8096
+username: me
+password: hunter2
+device: vee # Device name to report to jellyfin (default: hostname)
+skip_segments: # Segments to automatically skip (default: [])
+  - Recap
+  - Preview
+  - Intro
+  - Outro
+```
+
+### Segment skipping
+
+By default, no segments are automatically skipped. To enable skipping segments you must add `skip_segments` to the configuration file. Possible values for `skip_segments` are the segment types in Jellyfin which are: `Unknown`, `Commercial`, `Preview`, `Recap`, `Outro` and `Intro`.
 
 ## Plans
 
-- MediaSegments API
-- Librariy browsing
+- Configuration through TUI
+- Complete library browsing
 - Sorting
 - Filtering
 - Better search: Filter by media type, watched status, and metadata

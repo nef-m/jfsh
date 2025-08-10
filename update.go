@@ -9,7 +9,7 @@ import (
 	"github.com/hacel/jfsh/internal/mpv"
 )
 
-type playbackStopped struct{}
+type playbackStopped struct{ error }
 
 func (m *model) playItem() tea.Cmd {
 	client := m.client
@@ -25,13 +25,17 @@ func (m *model) playItem() tea.Cmd {
 				return item.GetId() == i.GetId()
 			})
 			idx = max(0, idx) // sanity check
-			mpv.Play(client, items, idx)
-			return playbackStopped{}
+			if err := mpv.Play(client, items, idx); err != nil {
+				return playbackStopped{err}
+			}
+			return playbackStopped{nil}
 		}
 	}
 	return func() tea.Msg {
-		mpv.Play(client, []jellyfin.Item{item}, 0)
-		return playbackStopped{}
+		if err := mpv.Play(client, []jellyfin.Item{item}, 0); err != nil {
+			return playbackStopped{err}
+		}
+		return playbackStopped{nil}
 	}
 }
 
@@ -90,6 +94,14 @@ func (m *model) fetchItems() tea.Cmd {
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case playbackStopped:
+		if msg.error != nil {
+			m.err = msg.error
+		}
+		m.playing = nil
+		m.updateKeys()
+		return m, m.fetchItems()
+
 	case error:
 		m.err = msg
 		return m, nil
@@ -102,11 +114,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.width = msg.Width
 		m.height = msg.Height
 		return m, nil
-
-	case playbackStopped:
-		m.playing = nil
-		m.updateKeys()
-		return m, m.fetchItems()
 
 	case tea.KeyMsg:
 		if key.Matches(msg, m.keyMap.ForceQuit) {
