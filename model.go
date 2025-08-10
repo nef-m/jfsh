@@ -4,7 +4,7 @@ import (
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/hacel/jfsh/jellyfin"
+	"github.com/hacel/jfsh/internal/jellyfin"
 )
 
 type tab int

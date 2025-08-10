@@ -13,7 +13,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/hacel/jfsh/jellyfin"
+	"github.com/hacel/jfsh/internal/jellyfin"
 )
 
 func secondsToTicks(seconds float64) int64 {
@@ -197,22 +197,22 @@ func Play(client *jellyfin.Client, items []jellyfin.Item, index int) {
 		case "property-change":
 			switch response.Name {
 			case "time-pos":
-				if time.Since(lastProgressUpdate) < 3*time.Second {
-					// debounce
-					continue
-				}
 				data, ok := response.Data.(float64)
 				if !ok {
 					slog.Error("failed to parse time-pos data as float64", "line", line, "data", response.Data)
 					continue
 				}
 				pos = data
-				if err := client.ReportPlaybackProgress(item, secondsToTicks(pos)); err != nil {
-					slog.Error("failed to report playback progress", "err", err)
-					continue
+
+				// debounced progress reporting
+				if time.Since(lastProgressUpdate) > 3*time.Second {
+					if err := client.ReportPlaybackProgress(item, secondsToTicks(pos)); err != nil {
+						slog.Error("failed to report playback progress", "err", err)
+						continue
+					}
+					slog.Info("reported progress", "item", item.GetName(), "pos", pos)
+					lastProgressUpdate = time.Now()
 				}
-				slog.Info("reported progress", "item", item.GetName(), "pos", pos)
-				lastProgressUpdate = time.Now()
 			}
 
 		case "start-file":

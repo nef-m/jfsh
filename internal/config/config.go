@@ -8,7 +8,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/google/uuid"
-	"github.com/hacel/jfsh/jellyfin"
+	"github.com/hacel/jfsh/internal/jellyfin"
 	"github.com/spf13/viper"
 )
 

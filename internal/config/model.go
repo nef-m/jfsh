@@ -6,7 +6,7 @@ import (
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/hacel/jfsh/jellyfin"
+	"github.com/hacel/jfsh/internal/jellyfin"
 	"github.com/spf13/viper"
 )
 
