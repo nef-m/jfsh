@@ -9,14 +9,12 @@ import (
 	"github.com/sj14/jellyfin-go/api"
 )
 
-type (
-	Client struct {
-		api    *api.APIClient
-		Host   string
-		UserID string
-		Token  string
-	}
-)
+type Client struct {
+	api    *api.APIClient
+	Host   string
+	UserID string
+	Token  string
+}
 
 // get token and user id
 func authorize(host, username, password, device, deviceID, version string) (token, userID string, err error) {
