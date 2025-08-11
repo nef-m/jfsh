@@ -38,6 +38,7 @@ changelog:
       - "^chore"
       - "^ci"
       - "^style"
+      - "^refactor"
 
 release:
   draft: false
