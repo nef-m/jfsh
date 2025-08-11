@@ -135,8 +135,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case []jellyfin.Item:
-		m.currentItem = 0
 		m.items = msg
+		if m.currentItem >= len(m.items) {
+			m.currentItem = 0
+		}
 		m.updateKeys()
 		return m, nil
 
