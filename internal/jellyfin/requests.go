@@ -114,3 +114,8 @@ func (c *Client) GetMediaSegments(item Item, types []string) (map[int64]int64, e
 	}
 	return segments, nil
 }
+
+func (c *Client) MarkAsWatched(item Item) error {
+	_, _, err := c.api.PlaystateAPI.MarkPlayedItem(context.Background(), item.GetId()).Execute()
+	return err
+}

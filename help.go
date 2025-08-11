@@ -20,6 +20,7 @@ func (m model) FullHelp() [][]key.Binding {
 			m.keyMap.ClearSearch,
 		},
 		[]key.Binding{
+			m.keyMap.MarkAsWatched,
 			m.keyMap.Back,
 			m.keyMap.Quit,
 			m.keyMap.CloseFullHelp,
@@ -32,6 +33,7 @@ func (m model) ShortHelp() []key.Binding {
 		m.keyMap.Search,
 		m.keyMap.ClearSearch,
 		m.keyMap.Back,
+		m.keyMap.MarkAsWatched,
 
 		m.keyMap.CancelWhileSearching,
 		m.keyMap.AcceptWhileSearching,

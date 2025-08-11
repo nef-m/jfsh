@@ -39,6 +39,19 @@ func (m *model) playItem() tea.Cmd {
 	}
 }
 
+type markAsWatchedResult struct{ error }
+
+func (m *model) markAsWatched() tea.Cmd {
+	client := m.client
+	item := m.items[m.currentItem]
+	return func() tea.Msg {
+		if err := client.MarkAsWatched(item); err != nil {
+			return markAsWatchedResult{err}
+		}
+		return markAsWatchedResult{nil}
+	}
+}
+
 func (m *model) fetchItems() tea.Cmd {
 	client := m.client
 	if m.currentSeries != nil {
@@ -102,6 +115,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.updateKeys()
 		return m, m.fetchItems()
 
+	case markAsWatchedResult:
+		if msg.error != nil {
+			m.err = msg.error
+		}
+		return m, m.fetchItems()
+
 	case error:
 		m.err = msg
 		return m, nil
@@ -109,6 +128,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case []jellyfin.Item:
 		m.currentItem = 0
 		m.items = msg
+		m.updateKeys()
 		return m, nil
 
 	case tea.WindowSizeMsg:
@@ -142,17 +162,21 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.currentItem > 0 {
 				m.currentItem--
 			}
+			m.updateKeys()
 			return m, nil
 		case key.Matches(msg, m.keyMap.CursorDown):
 			if m.currentItem < len(m.items)-1 {
 				m.currentItem++
 			}
+			m.updateKeys()
 			return m, nil
 		case key.Matches(msg, m.keyMap.GoToEnd):
 			m.currentItem = len(m.items) - 1
+			m.updateKeys()
 			return m, nil
 		case key.Matches(msg, m.keyMap.GoToStart):
 			m.currentItem = 0
+			m.updateKeys()
 			return m, nil
 
 		case key.Matches(msg, m.keyMap.NextTab):
@@ -206,6 +230,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.help.ShowAll = !m.help.ShowAll
 			m.updateKeys()
 			return m, nil
+
+		case key.Matches(msg, m.keyMap.MarkAsWatched):
+			return m, m.markAsWatched()
 
 		case key.Matches(msg, m.keyMap.Quit):
 			return m, tea.Quit

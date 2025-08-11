@@ -1,20 +1,24 @@
 package main
 
-import "github.com/charmbracelet/bubbles/key"
+import (
+	"github.com/charmbracelet/bubbles/key"
+	"github.com/hacel/jfsh/internal/jellyfin"
+)
 
 // KeyMap defines keybindings. It satisfies to the help.KeyMap interface, which is used to render the menu.
 type KeyMap struct {
 	// Keybindings used when browsing the list.
-	CursorUp    key.Binding
-	CursorDown  key.Binding
-	NextTab     key.Binding
-	PrevTab     key.Binding
-	GoToStart   key.Binding
-	GoToEnd     key.Binding
-	Search      key.Binding
-	ClearSearch key.Binding
-	Select      key.Binding
-	Back        key.Binding
+	CursorUp      key.Binding
+	CursorDown    key.Binding
+	NextTab       key.Binding
+	PrevTab       key.Binding
+	GoToStart     key.Binding
+	GoToEnd       key.Binding
+	Search        key.Binding
+	ClearSearch   key.Binding
+	Select        key.Binding
+	Back          key.Binding
+	MarkAsWatched key.Binding
 
 	// Keybindings used when setting a search.
 	CancelWhileSearching key.Binding
@@ -75,6 +79,10 @@ func defaultKeyMap() KeyMap {
 			key.WithHelp("esc", "back"),
 			key.WithDisabled(),
 		),
+		MarkAsWatched: key.NewBinding(
+			key.WithKeys("w"),
+			key.WithHelp("w", "mark as watched"),
+		),
 
 		// Searching.
 		CancelWhileSearching: key.NewBinding(
@@ -119,6 +127,7 @@ func (m *model) updateKeys() {
 		m.keyMap.ClearSearch.SetEnabled(false)
 		m.keyMap.Select.SetEnabled(false)
 		m.keyMap.Back.SetEnabled(false)
+		m.keyMap.MarkAsWatched.SetEnabled(false)
 		m.keyMap.CancelWhileSearching.SetEnabled(false)
 		m.keyMap.AcceptWhileSearching.SetEnabled(false)
 		m.keyMap.ShowFullHelp.SetEnabled(false)
@@ -137,6 +146,7 @@ func (m *model) updateKeys() {
 		m.keyMap.ClearSearch.SetEnabled(false)
 		m.keyMap.Select.SetEnabled(true)
 		m.keyMap.Back.SetEnabled(true)
+		m.keyMap.MarkAsWatched.SetEnabled(len(m.items) > 0 && m.currentItem < len(m.items) && !jellyfin.IsSeries(m.items[m.currentItem]))
 		m.keyMap.CancelWhileSearching.SetEnabled(false)
 		m.keyMap.AcceptWhileSearching.SetEnabled(false)
 		m.keyMap.ShowFullHelp.SetEnabled(!m.help.ShowAll)
@@ -155,6 +165,7 @@ func (m *model) updateKeys() {
 		m.keyMap.ClearSearch.SetEnabled(false)
 		m.keyMap.Select.SetEnabled(true)
 		m.keyMap.Back.SetEnabled(false)
+		m.keyMap.MarkAsWatched.SetEnabled(len(m.items) > 0 && m.currentItem < len(m.items) && !jellyfin.IsSeries(m.items[m.currentItem]))
 		m.keyMap.CancelWhileSearching.SetEnabled(false)
 		m.keyMap.AcceptWhileSearching.SetEnabled(false)
 		m.keyMap.ShowFullHelp.SetEnabled(!m.help.ShowAll)
@@ -173,6 +184,7 @@ func (m *model) updateKeys() {
 		m.keyMap.ClearSearch.SetEnabled(m.searchInput.Value() != "")
 		m.keyMap.Select.SetEnabled(true)
 		m.keyMap.Back.SetEnabled(false)
+		m.keyMap.MarkAsWatched.SetEnabled(len(m.items) > 0 && m.currentItem < len(m.items) && !jellyfin.IsSeries(m.items[m.currentItem]))
 		m.keyMap.CancelWhileSearching.SetEnabled(false)
 		m.keyMap.AcceptWhileSearching.SetEnabled(false)
 		m.keyMap.ShowFullHelp.SetEnabled(!m.help.ShowAll)
@@ -191,6 +203,7 @@ func (m *model) updateKeys() {
 		m.keyMap.ClearSearch.SetEnabled(false)
 		m.keyMap.Select.SetEnabled(false)
 		m.keyMap.Back.SetEnabled(false)
+		m.keyMap.MarkAsWatched.SetEnabled(len(m.items) > 0 && m.currentItem < len(m.items) && !jellyfin.IsSeries(m.items[m.currentItem]))
 		m.keyMap.CancelWhileSearching.SetEnabled(true)
 		m.keyMap.AcceptWhileSearching.SetEnabled(true)
 		m.keyMap.ShowFullHelp.SetEnabled(false)
