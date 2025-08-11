@@ -107,6 +107,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case []jellyfin.Item:
+		m.currentItem = 0
 		m.items = msg
 		return m, nil
 
@@ -160,7 +161,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			} else {
 				m.currentTab = 0
 			}
-			m.currentItem = 0
 			m.updateKeys()
 			return m, m.fetchItems()
 		case key.Matches(msg, m.keyMap.PrevTab):
@@ -169,7 +169,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			} else {
 				m.currentTab = Search
 			}
-			m.currentItem = 0
 			m.updateKeys()
 			return m, m.fetchItems()
 
@@ -186,7 +185,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			item := m.items[m.currentItem]
 			if jellyfin.IsSeries(item) {
 				m.currentSeries = &item
-				m.currentItem = 0
 				m.updateKeys()
 				return m, m.fetchItems()
 			}
@@ -196,7 +194,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case key.Matches(msg, m.keyMap.Back):
 			m.currentSeries = nil
-			m.currentItem = 0
 			m.updateKeys()
 			return m, m.fetchItems()
 
