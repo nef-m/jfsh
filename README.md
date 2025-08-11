@@ -7,7 +7,6 @@ Inspired by [jftui](https://github.com/Aanok/jftui).
 
 ## Features
 
-- Search!
 - Uses _your_ mpv config!
 - Resumes playback!
 - Tracks playback progress and updates jellyfin!
