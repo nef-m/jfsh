@@ -39,16 +39,25 @@ func (m *model) playItem() tea.Cmd {
 	}
 }
 
-type markAsWatchedResult struct{ error }
+type toggleWatchedResult struct{ error }
 
-func (m *model) markAsWatched() tea.Cmd {
+func (m *model) toggleWatchedStatus() tea.Cmd {
 	client := m.client
 	item := m.items[m.currentItem]
-	return func() tea.Msg {
-		if err := client.MarkAsWatched(item); err != nil {
-			return markAsWatchedResult{err}
+	if jellyfin.Watched(item) {
+		return func() tea.Msg {
+			if err := client.MarkAsUnwatched(item); err != nil {
+				return toggleWatchedResult{err}
+			}
+			return toggleWatchedResult{nil}
 		}
-		return markAsWatchedResult{nil}
+	} else {
+		return func() tea.Msg {
+			if err := client.MarkAsWatched(item); err != nil {
+				return toggleWatchedResult{err}
+			}
+			return toggleWatchedResult{nil}
+		}
 	}
 }
 
@@ -115,7 +124,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.updateKeys()
 		return m, m.fetchItems()
 
-	case markAsWatchedResult:
+	case toggleWatchedResult:
 		if msg.error != nil {
 			m.err = msg.error
 		}
@@ -231,8 +240,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.updateKeys()
 			return m, nil
 
-		case key.Matches(msg, m.keyMap.MarkAsWatched):
-			return m, m.markAsWatched()
+		case key.Matches(msg, m.keyMap.ToggleWatched):
+			return m, m.toggleWatchedStatus()
 
 		case key.Matches(msg, m.keyMap.Quit):
 			return m, tea.Quit

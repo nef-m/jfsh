@@ -119,3 +119,8 @@ func (c *Client) MarkAsWatched(item Item) error {
 	_, _, err := c.api.PlaystateAPI.MarkPlayedItem(context.Background(), item.GetId()).Execute()
 	return err
 }
+
+func (c *Client) MarkAsUnwatched(item Item) error {
+	_, _, err := c.api.PlaystateAPI.MarkUnplayedItem(context.Background(), item.GetId()).Execute()
+	return err
+}

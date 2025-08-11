@@ -18,7 +18,7 @@ type KeyMap struct {
 	ClearSearch   key.Binding
 	Select        key.Binding
 	Back          key.Binding
-	MarkAsWatched key.Binding
+	ToggleWatched key.Binding
 
 	// Keybindings used when setting a search.
 	CancelWhileSearching key.Binding
@@ -79,9 +79,9 @@ func defaultKeyMap() KeyMap {
 			key.WithHelp("esc", "back"),
 			key.WithDisabled(),
 		),
-		MarkAsWatched: key.NewBinding(
+		ToggleWatched: key.NewBinding(
 			key.WithKeys("w"),
-			key.WithHelp("w", "mark as watched"),
+			key.WithHelp("w", "toggle watched"),
 		),
 
 		// Searching.
@@ -127,7 +127,7 @@ func (m *model) updateKeys() {
 		m.keyMap.ClearSearch.SetEnabled(false)
 		m.keyMap.Select.SetEnabled(false)
 		m.keyMap.Back.SetEnabled(false)
-		m.keyMap.MarkAsWatched.SetEnabled(false)
+		m.keyMap.ToggleWatched.SetEnabled(false)
 		m.keyMap.CancelWhileSearching.SetEnabled(false)
 		m.keyMap.AcceptWhileSearching.SetEnabled(false)
 		m.keyMap.ShowFullHelp.SetEnabled(false)
@@ -146,7 +146,7 @@ func (m *model) updateKeys() {
 		m.keyMap.ClearSearch.SetEnabled(false)
 		m.keyMap.Select.SetEnabled(true)
 		m.keyMap.Back.SetEnabled(true)
-		m.keyMap.MarkAsWatched.SetEnabled(len(m.items) > 0 && m.currentItem < len(m.items) && !jellyfin.IsSeries(m.items[m.currentItem]))
+		m.keyMap.ToggleWatched.SetEnabled(len(m.items) > 0 && m.currentItem < len(m.items) && !jellyfin.IsSeries(m.items[m.currentItem]))
 		m.keyMap.CancelWhileSearching.SetEnabled(false)
 		m.keyMap.AcceptWhileSearching.SetEnabled(false)
 		m.keyMap.ShowFullHelp.SetEnabled(!m.help.ShowAll)
@@ -165,7 +165,7 @@ func (m *model) updateKeys() {
 		m.keyMap.ClearSearch.SetEnabled(false)
 		m.keyMap.Select.SetEnabled(true)
 		m.keyMap.Back.SetEnabled(false)
-		m.keyMap.MarkAsWatched.SetEnabled(len(m.items) > 0 && m.currentItem < len(m.items) && !jellyfin.IsSeries(m.items[m.currentItem]))
+		m.keyMap.ToggleWatched.SetEnabled(len(m.items) > 0 && m.currentItem < len(m.items) && !jellyfin.IsSeries(m.items[m.currentItem]))
 		m.keyMap.CancelWhileSearching.SetEnabled(false)
 		m.keyMap.AcceptWhileSearching.SetEnabled(false)
 		m.keyMap.ShowFullHelp.SetEnabled(!m.help.ShowAll)
@@ -184,7 +184,7 @@ func (m *model) updateKeys() {
 		m.keyMap.ClearSearch.SetEnabled(m.searchInput.Value() != "")
 		m.keyMap.Select.SetEnabled(true)
 		m.keyMap.Back.SetEnabled(false)
-		m.keyMap.MarkAsWatched.SetEnabled(len(m.items) > 0 && m.currentItem < len(m.items) && !jellyfin.IsSeries(m.items[m.currentItem]))
+		m.keyMap.ToggleWatched.SetEnabled(len(m.items) > 0 && m.currentItem < len(m.items) && !jellyfin.IsSeries(m.items[m.currentItem]))
 		m.keyMap.CancelWhileSearching.SetEnabled(false)
 		m.keyMap.AcceptWhileSearching.SetEnabled(false)
 		m.keyMap.ShowFullHelp.SetEnabled(!m.help.ShowAll)
@@ -203,7 +203,7 @@ func (m *model) updateKeys() {
 		m.keyMap.ClearSearch.SetEnabled(false)
 		m.keyMap.Select.SetEnabled(false)
 		m.keyMap.Back.SetEnabled(false)
-		m.keyMap.MarkAsWatched.SetEnabled(len(m.items) > 0 && m.currentItem < len(m.items) && !jellyfin.IsSeries(m.items[m.currentItem]))
+		m.keyMap.ToggleWatched.SetEnabled(false)
 		m.keyMap.CancelWhileSearching.SetEnabled(true)
 		m.keyMap.AcceptWhileSearching.SetEnabled(true)
 		m.keyMap.ShowFullHelp.SetEnabled(false)
