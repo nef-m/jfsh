@@ -19,6 +19,7 @@ type KeyMap struct {
 	Select        key.Binding
 	Back          key.Binding
 	ToggleWatched key.Binding
+	Refresh       key.Binding
 
 	// Keybindings used when setting a search.
 	CancelWhileSearching key.Binding
@@ -83,6 +84,10 @@ func defaultKeyMap() KeyMap {
 			key.WithKeys("w"),
 			key.WithHelp("w", "toggle watched"),
 		),
+		Refresh: key.NewBinding(
+			key.WithKeys("r"),
+			key.WithHelp("r", "refresh"),
+		),
 
 		// Searching.
 		CancelWhileSearching: key.NewBinding(
@@ -128,6 +133,7 @@ func (m *model) updateKeys() {
 		m.keyMap.Select.SetEnabled(false)
 		m.keyMap.Back.SetEnabled(false)
 		m.keyMap.ToggleWatched.SetEnabled(false)
+		m.keyMap.Refresh.SetEnabled(false)
 		m.keyMap.CancelWhileSearching.SetEnabled(false)
 		m.keyMap.AcceptWhileSearching.SetEnabled(false)
 		m.keyMap.ShowFullHelp.SetEnabled(false)
@@ -147,6 +153,7 @@ func (m *model) updateKeys() {
 		m.keyMap.Select.SetEnabled(true)
 		m.keyMap.Back.SetEnabled(true)
 		m.keyMap.ToggleWatched.SetEnabled(len(m.items) > 0 && m.currentItem < len(m.items) && !jellyfin.IsSeries(m.items[m.currentItem]))
+		m.keyMap.Refresh.SetEnabled(true)
 		m.keyMap.CancelWhileSearching.SetEnabled(false)
 		m.keyMap.AcceptWhileSearching.SetEnabled(false)
 		m.keyMap.ShowFullHelp.SetEnabled(!m.help.ShowAll)
@@ -166,6 +173,7 @@ func (m *model) updateKeys() {
 		m.keyMap.Select.SetEnabled(true)
 		m.keyMap.Back.SetEnabled(false)
 		m.keyMap.ToggleWatched.SetEnabled(len(m.items) > 0 && m.currentItem < len(m.items) && !jellyfin.IsSeries(m.items[m.currentItem]))
+		m.keyMap.Refresh.SetEnabled(true)
 		m.keyMap.CancelWhileSearching.SetEnabled(false)
 		m.keyMap.AcceptWhileSearching.SetEnabled(false)
 		m.keyMap.ShowFullHelp.SetEnabled(!m.help.ShowAll)
@@ -185,6 +193,7 @@ func (m *model) updateKeys() {
 		m.keyMap.Select.SetEnabled(true)
 		m.keyMap.Back.SetEnabled(false)
 		m.keyMap.ToggleWatched.SetEnabled(len(m.items) > 0 && m.currentItem < len(m.items) && !jellyfin.IsSeries(m.items[m.currentItem]))
+		m.keyMap.Refresh.SetEnabled(true)
 		m.keyMap.CancelWhileSearching.SetEnabled(false)
 		m.keyMap.AcceptWhileSearching.SetEnabled(false)
 		m.keyMap.ShowFullHelp.SetEnabled(!m.help.ShowAll)
@@ -204,6 +213,7 @@ func (m *model) updateKeys() {
 		m.keyMap.Select.SetEnabled(false)
 		m.keyMap.Back.SetEnabled(false)
 		m.keyMap.ToggleWatched.SetEnabled(false)
+		m.keyMap.Refresh.SetEnabled(false)
 		m.keyMap.CancelWhileSearching.SetEnabled(true)
 		m.keyMap.AcceptWhileSearching.SetEnabled(true)
 		m.keyMap.ShowFullHelp.SetEnabled(false)

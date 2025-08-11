@@ -245,6 +245,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, m.keyMap.ToggleWatched):
 			return m, m.toggleWatchedStatus()
 
+		case key.Matches(msg, m.keyMap.Refresh):
+			return m, m.fetchItems()
+
 		case key.Matches(msg, m.keyMap.Quit):
 			return m, tea.Quit
 		default:

@@ -15,6 +15,7 @@ func (m model) FullHelp() [][]key.Binding {
 			m.keyMap.GoToEnd,
 		},
 		[]key.Binding{
+			m.keyMap.Refresh,
 			m.keyMap.Select,
 			m.keyMap.Search,
 			m.keyMap.ClearSearch,
