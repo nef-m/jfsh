@@ -10,6 +10,8 @@ type KeyMap struct {
 	// Keybindings used when browsing the list.
 	CursorUp      key.Binding
 	CursorDown    key.Binding
+	PageUp        key.Binding
+	PageDown      key.Binding
 	NextTab       key.Binding
 	PrevTab       key.Binding
 	GoToStart     key.Binding
@@ -46,6 +48,14 @@ func defaultKeyMap() KeyMap {
 		CursorDown: key.NewBinding(
 			key.WithKeys("down", "j"),
 			key.WithHelp("↓/j", "down"),
+		),
+		PageUp: key.NewBinding(
+			key.WithKeys("pgup", "b", "u"),
+			key.WithHelp("pgup/b/u", "page up"),
+		),
+		PageDown: key.NewBinding(
+			key.WithKeys("pgdn", "f", "d"),
+			key.WithHelp("pgdn/f/d", "page down"),
 		),
 		PrevTab: key.NewBinding(
 			key.WithKeys("left", "h"),

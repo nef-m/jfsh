@@ -181,6 +181,16 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			m.updateKeys()
 			return m, nil
+		case key.Matches(msg, m.keyMap.PageUp):
+			jump := m.height / 5
+			m.currentItem = max(0, m.currentItem-jump)
+			m.updateKeys()
+			return m, nil
+		case key.Matches(msg, m.keyMap.PageDown):
+			jump := m.height / 5
+			m.currentItem = min(len(m.items)-1, m.currentItem+jump)
+			m.updateKeys()
+			return m, nil
 		case key.Matches(msg, m.keyMap.GoToEnd):
 			m.currentItem = len(m.items) - 1
 			m.updateKeys()

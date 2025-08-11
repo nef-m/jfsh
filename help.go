@@ -9,12 +9,14 @@ func (m model) FullHelp() [][]key.Binding {
 		[]key.Binding{
 			m.keyMap.CursorUp,
 			m.keyMap.CursorDown,
-			m.keyMap.NextTab,
-			m.keyMap.PrevTab,
+			m.keyMap.PageUp,
+			m.keyMap.PageDown,
 			m.keyMap.GoToStart,
 			m.keyMap.GoToEnd,
 		},
 		[]key.Binding{
+			m.keyMap.NextTab,
+			m.keyMap.PrevTab,
 			m.keyMap.Refresh,
 			m.keyMap.Select,
 			m.keyMap.Search,
