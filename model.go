@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/charmbracelet/bubbles/help"
+	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/hacel/jfsh/internal/jellyfin"
@@ -39,7 +40,9 @@ type model struct {
 
 	playing *jellyfin.Item
 
-	err error
+	err     error
+	spinner spinner.Model
+	loading bool
 }
 
 func initialModel(client *jellyfin.Client) model {
@@ -52,11 +55,16 @@ func initialModel(client *jellyfin.Client) model {
 		help:        help.New(),
 		client:      client,
 		searchInput: searchInput,
+		spinner:     spinner.New(spinner.WithSpinner(spinner.Dot)),
+		loading:     true,
 	}
 	m.updateKeys()
 	return m
 }
 
 func (m model) Init() tea.Cmd {
-	return m.fetchItems()
+	return tea.Batch(
+		m.fetchItems(),
+		m.spinner.Tick,
+	)
 }

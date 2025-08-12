@@ -4,12 +4,15 @@ import (
 	"slices"
 
 	"github.com/charmbracelet/bubbles/key"
+	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/hacel/jfsh/internal/jellyfin"
 	"github.com/hacel/jfsh/internal/mpv"
 )
 
-type playbackStopped struct{ error }
+type playbackStopped struct {
+	err error
+}
 
 func (m *model) playItem() tea.Cmd {
 	client := m.client
@@ -39,9 +42,12 @@ func (m *model) playItem() tea.Cmd {
 	}
 }
 
-type toggleWatchedResult struct{ error }
+type toggleWatchedResult struct {
+	err error
+}
 
 func (m *model) toggleWatchedStatus() tea.Cmd {
+	m.loading = true
 	client := m.client
 	item := m.items[m.currentItem]
 	if jellyfin.Watched(item) {
@@ -61,15 +67,21 @@ func (m *model) toggleWatchedStatus() tea.Cmd {
 	}
 }
 
+type fetchItemsResult struct {
+	items []jellyfin.Item
+	err   error
+}
+
 func (m *model) fetchItems() tea.Cmd {
+	m.loading = true
 	client := m.client
 	if m.currentSeries != nil {
 		return func() tea.Msg {
 			items, err := client.GetEpisodes(*m.currentSeries)
 			if err != nil {
-				return err
+				return fetchItemsResult{nil, err}
 			}
-			return items
+			return fetchItemsResult{items, nil}
 		}
 	}
 	switch m.currentTab {
@@ -77,37 +89,37 @@ func (m *model) fetchItems() tea.Cmd {
 		return func() tea.Msg {
 			items, err := client.GetResume()
 			if err != nil {
-				return err
+				return fetchItemsResult{nil, err}
 			}
-			return items
+			return fetchItemsResult{items, nil}
 		}
 	case NextUp:
 		return func() tea.Msg {
 			items, err := client.GetNextUp()
 			if err != nil {
-				return err
+				return fetchItemsResult{nil, err}
 			}
-			return items
+			return fetchItemsResult{items, nil}
 		}
 	case RecentlyAdded:
 		return func() tea.Msg {
 			items, err := client.GetRecentlyAdded()
 			if err != nil {
-				return err
+				return fetchItemsResult{nil, err}
 			}
-			return items
+			return fetchItemsResult{items, nil}
 		}
 	case Search:
 		query := m.searchInput.Value()
 		return func() tea.Msg {
 			if query == "" {
-				return []jellyfin.Item{}
+				return fetchItemsResult{nil, nil}
 			}
 			items, err := client.Search(query)
 			if err != nil {
-				return err
+				return fetchItemsResult{nil, err}
 			}
-			return items
+			return fetchItemsResult{items, nil}
 		}
 	default:
 		panic("oops, selected tab is not in switch statement")
@@ -116,26 +128,32 @@ func (m *model) fetchItems() tea.Cmd {
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+
+	case error:
+		m.err = msg
+		return m, nil
+
 	case playbackStopped:
-		if msg.error != nil {
-			m.err = msg.error
+		if msg.err != nil {
+			m.err = msg.err
 		}
 		m.playing = nil
 		m.updateKeys()
 		return m, m.fetchItems()
 
 	case toggleWatchedResult:
-		if msg.error != nil {
-			m.err = msg.error
+		m.loading = false
+		if msg.err != nil {
+			m.err = msg.err
 		}
 		return m, m.fetchItems()
 
-	case error:
-		m.err = msg
-		return m, nil
-
-	case []jellyfin.Item:
-		m.items = msg
+	case fetchItemsResult:
+		m.loading = false
+		if msg.err != nil {
+			m.err = msg.err
+		}
+		m.items = msg.items
 		if m.currentItem >= len(m.items) {
 			m.currentItem = 0
 		}
@@ -146,6 +164,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.width = msg.Width
 		m.height = msg.Height
 		return m, nil
+
+	case spinner.TickMsg:
+		var cmd tea.Cmd
+		m.spinner, cmd = m.spinner.Update(msg)
+		return m, cmd
 
 	case tea.KeyMsg:
 		if key.Matches(msg, m.keyMap.ForceQuit) {

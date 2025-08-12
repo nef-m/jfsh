@@ -86,4 +86,3 @@ By default, no segments are automatically skipped. To enable skipping segments y
 - Sorting
 - Filtering
 - Better search: Filter by media type, watched status, and metadata
-- Visual indicator of tab content loading

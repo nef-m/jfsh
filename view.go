@@ -36,7 +36,8 @@ var (
 	scrollbarStyle      = lipgloss.NewStyle().Foreground(dimTextColor)
 	scrollbarThumbStyle = lipgloss.NewStyle().Foreground(pinkColor)
 
-	errStyle = lipgloss.NewStyle().Foreground(errColor)
+	errStyle     = lipgloss.NewStyle().Foreground(errColor)
+	spinnerStyle = tabStyle.UnsetBackground().Foreground(brightPinkColor)
 )
 
 func (m model) View() string {
@@ -64,6 +65,7 @@ func (m model) View() string {
 	}
 
 	{
+		var tabsView string
 		if m.currentSeries == nil {
 			var tabs []string
 			for i, name := range []string{ResumeTabName, NextUpTabName, RecentlyAddedTabName, SearchTabName} {
@@ -73,18 +75,23 @@ func (m model) View() string {
 				}
 				tabs = append(tabs, tabStyle.Render(name))
 			}
-			v := lipgloss.JoinHorizontal(lipgloss.Top, tabs...)
-			sections = append(sections, v)
-			availHeight -= lipgloss.Height(v)
-
-			if m.currentTab == Search {
-				v := searchInputStyle.Render(m.searchInput.View())
-				sections = append(sections, v)
-				availHeight -= lipgloss.Height(v)
-			}
+			tabsView = lipgloss.JoinHorizontal(lipgloss.Top, tabs...)
 		} else {
-			title := jellyfin.GetItemTitle(*m.currentSeries)
-			v := currentTabStyle.Render(title)
+			tabsView = jellyfin.GetItemTitle(*m.currentSeries)
+			tabsView = currentTabStyle.Render(tabsView)
+		}
+		var spinnerView string
+		if m.loading {
+			spinnerView = spinnerStyle.Render(m.spinner.View())
+		}
+		v := lipgloss.JoinHorizontal(lipgloss.Top, tabsView, spinnerView)
+		sections = append(sections, v)
+		availHeight -= lipgloss.Height(v)
+	}
+
+	{
+		if m.currentTab == Search {
+			v := searchInputStyle.Render(m.searchInput.View())
 			sections = append(sections, v)
 			availHeight -= lipgloss.Height(v)
 		}
