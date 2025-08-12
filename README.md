@@ -84,5 +84,4 @@ By default, no segments are automatically skipped. To enable skipping segments y
 - Configuration through TUI
 - Complete library browsing
 - Sorting
-- Filtering
 - Better search: Filter by media type, watched status, and metadata

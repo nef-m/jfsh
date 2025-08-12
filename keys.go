@@ -18,14 +18,20 @@ type KeyMap struct {
 	GoToEnd       key.Binding
 	Search        key.Binding
 	ClearSearch   key.Binding
+	Filter        key.Binding
+	ClearFilter   key.Binding
 	Select        key.Binding
 	Back          key.Binding
 	ToggleWatched key.Binding
 	Refresh       key.Binding
 
-	// Keybindings used when setting a search.
+	// Keybindings used when searching.
 	CancelWhileSearching key.Binding
 	AcceptWhileSearching key.Binding
+
+	// Keybindings used when filtering.
+	CancelWhileFiltering key.Binding
+	AcceptWhileFiltering key.Binding
 
 	// Help toggle keybindings.
 	ShowFullHelp  key.Binding
@@ -81,6 +87,14 @@ func defaultKeyMap() KeyMap {
 			key.WithKeys("esc"),
 			key.WithHelp("esc", "clear"),
 		),
+		Filter: key.NewBinding(
+			key.WithKeys("/"),
+			key.WithHelp("/", "filter"),
+		),
+		ClearFilter: key.NewBinding(
+			key.WithKeys("esc"),
+			key.WithHelp("esc", "clear"),
+		),
 		Select: key.NewBinding(
 			key.WithKeys("enter", "space"),
 			key.WithHelp("enter", "select"),
@@ -106,7 +120,17 @@ func defaultKeyMap() KeyMap {
 		),
 		AcceptWhileSearching: key.NewBinding(
 			key.WithKeys("enter", "tab", "shift+tab", "ctrl+k", "up", "ctrl+j", "down"),
-			key.WithHelp("enter", "apply search"),
+			key.WithHelp("enter", "apply"),
+		),
+
+		// Filtering.
+		CancelWhileFiltering: key.NewBinding(
+			key.WithKeys("esc"),
+			key.WithHelp("esc", "cancel"),
+		),
+		AcceptWhileFiltering: key.NewBinding(
+			key.WithKeys("enter", "tab", "shift+tab", "ctrl+k", "up", "ctrl+j", "down"),
+			key.WithHelp("enter", "apply"),
 		),
 
 		// Toggle help.
@@ -128,9 +152,84 @@ func defaultKeyMap() KeyMap {
 	}
 }
 
+// FullHelp satisifies the help.KeyMap interface.
+func (k KeyMap) FullHelp() [][]key.Binding {
+	return append(
+		[][]key.Binding{},
+		[]key.Binding{
+			k.CursorUp,
+			k.CursorDown,
+			k.PageUp,
+			k.PageDown,
+			k.GoToStart,
+			k.GoToEnd,
+		},
+		[]key.Binding{
+			k.NextTab,
+			k.PrevTab,
+			k.Refresh,
+			k.Select,
+			k.Search,
+			k.ClearSearch,
+			k.Filter,
+			k.ClearFilter,
+		},
+		[]key.Binding{
+			k.ToggleWatched,
+			k.Back,
+			k.Quit,
+			k.CloseFullHelp,
+		})
+}
+
+// ShortHelp satisifies the help.KeyMap interface.
+func (k KeyMap) ShortHelp() []key.Binding {
+	return []key.Binding{
+		k.Back,
+		k.ToggleWatched,
+
+		k.Search,
+		k.ClearSearch,
+		k.CancelWhileSearching,
+		k.AcceptWhileSearching,
+
+		k.Filter,
+		k.ClearFilter,
+		k.CancelWhileFiltering,
+		k.AcceptWhileFiltering,
+
+		k.ShowFullHelp,
+		k.Quit,
+	}
+}
+
 // updateKeys handles enabling and disabling of all keybinds based on UI state
 func (m *model) updateKeys() {
 	switch {
+	case m.filterInput.Focused():
+		m.keyMap.CursorUp.SetEnabled(false)
+		m.keyMap.CursorDown.SetEnabled(false)
+		m.keyMap.NextTab.SetEnabled(false)
+		m.keyMap.PrevTab.SetEnabled(false)
+		m.keyMap.GoToStart.SetEnabled(false)
+		m.keyMap.GoToEnd.SetEnabled(false)
+		m.keyMap.Search.SetEnabled(false)
+		m.keyMap.ClearSearch.SetEnabled(false)
+		m.keyMap.Filter.SetEnabled(false)
+		m.keyMap.ClearFilter.SetEnabled(false)
+		m.keyMap.Select.SetEnabled(false)
+		m.keyMap.Back.SetEnabled(false)
+		m.keyMap.ToggleWatched.SetEnabled(false)
+		m.keyMap.Refresh.SetEnabled(false)
+		m.keyMap.CancelWhileSearching.SetEnabled(false)
+		m.keyMap.AcceptWhileSearching.SetEnabled(false)
+		m.keyMap.CancelWhileFiltering.SetEnabled(true)
+		m.keyMap.AcceptWhileFiltering.SetEnabled(true)
+		m.keyMap.ShowFullHelp.SetEnabled(false)
+		m.keyMap.CloseFullHelp.SetEnabled(false)
+		m.keyMap.Quit.SetEnabled(false)
+		m.keyMap.ForceQuit.SetEnabled(true)
+
 	case m.playing != nil:
 		m.keyMap.CursorUp.SetEnabled(false)
 		m.keyMap.CursorDown.SetEnabled(false)
@@ -140,12 +239,16 @@ func (m *model) updateKeys() {
 		m.keyMap.GoToEnd.SetEnabled(false)
 		m.keyMap.Search.SetEnabled(false)
 		m.keyMap.ClearSearch.SetEnabled(false)
+		m.keyMap.Filter.SetEnabled(false)
+		m.keyMap.ClearFilter.SetEnabled(false)
 		m.keyMap.Select.SetEnabled(false)
 		m.keyMap.Back.SetEnabled(false)
 		m.keyMap.ToggleWatched.SetEnabled(false)
 		m.keyMap.Refresh.SetEnabled(false)
 		m.keyMap.CancelWhileSearching.SetEnabled(false)
 		m.keyMap.AcceptWhileSearching.SetEnabled(false)
+		m.keyMap.CancelWhileFiltering.SetEnabled(false)
+		m.keyMap.AcceptWhileFiltering.SetEnabled(false)
 		m.keyMap.ShowFullHelp.SetEnabled(false)
 		m.keyMap.CloseFullHelp.SetEnabled(false)
 		m.keyMap.Quit.SetEnabled(false)
@@ -160,12 +263,16 @@ func (m *model) updateKeys() {
 		m.keyMap.GoToEnd.SetEnabled(true)
 		m.keyMap.Search.SetEnabled(false)
 		m.keyMap.ClearSearch.SetEnabled(false)
+		m.keyMap.Filter.SetEnabled(true)
+		m.keyMap.ClearFilter.SetEnabled(m.filterActive)
 		m.keyMap.Select.SetEnabled(true)
 		m.keyMap.Back.SetEnabled(true)
 		m.keyMap.ToggleWatched.SetEnabled(len(m.items) > 0 && m.currentItem < len(m.items) && !jellyfin.IsSeries(m.items[m.currentItem]))
 		m.keyMap.Refresh.SetEnabled(true)
 		m.keyMap.CancelWhileSearching.SetEnabled(false)
 		m.keyMap.AcceptWhileSearching.SetEnabled(false)
+		m.keyMap.CancelWhileFiltering.SetEnabled(false)
+		m.keyMap.AcceptWhileFiltering.SetEnabled(false)
 		m.keyMap.ShowFullHelp.SetEnabled(!m.help.ShowAll)
 		m.keyMap.CloseFullHelp.SetEnabled(m.help.ShowAll)
 		m.keyMap.Quit.SetEnabled(true)
@@ -180,12 +287,16 @@ func (m *model) updateKeys() {
 		m.keyMap.GoToEnd.SetEnabled(true)
 		m.keyMap.Search.SetEnabled(false)
 		m.keyMap.ClearSearch.SetEnabled(false)
+		m.keyMap.Filter.SetEnabled(true)
+		m.keyMap.ClearFilter.SetEnabled(m.filterActive)
 		m.keyMap.Select.SetEnabled(true)
 		m.keyMap.Back.SetEnabled(false)
 		m.keyMap.ToggleWatched.SetEnabled(len(m.items) > 0 && m.currentItem < len(m.items) && !jellyfin.IsSeries(m.items[m.currentItem]))
 		m.keyMap.Refresh.SetEnabled(true)
 		m.keyMap.CancelWhileSearching.SetEnabled(false)
 		m.keyMap.AcceptWhileSearching.SetEnabled(false)
+		m.keyMap.CancelWhileFiltering.SetEnabled(false)
+		m.keyMap.AcceptWhileFiltering.SetEnabled(false)
 		m.keyMap.ShowFullHelp.SetEnabled(!m.help.ShowAll)
 		m.keyMap.CloseFullHelp.SetEnabled(m.help.ShowAll)
 		m.keyMap.Quit.SetEnabled(true)
@@ -200,12 +311,16 @@ func (m *model) updateKeys() {
 		m.keyMap.GoToEnd.SetEnabled(true)
 		m.keyMap.Search.SetEnabled(true)
 		m.keyMap.ClearSearch.SetEnabled(m.searchInput.Value() != "")
+		m.keyMap.Filter.SetEnabled(false)
+		m.keyMap.ClearFilter.SetEnabled(false)
 		m.keyMap.Select.SetEnabled(true)
 		m.keyMap.Back.SetEnabled(false)
 		m.keyMap.ToggleWatched.SetEnabled(len(m.items) > 0 && m.currentItem < len(m.items) && !jellyfin.IsSeries(m.items[m.currentItem]))
 		m.keyMap.Refresh.SetEnabled(true)
 		m.keyMap.CancelWhileSearching.SetEnabled(false)
 		m.keyMap.AcceptWhileSearching.SetEnabled(false)
+		m.keyMap.CancelWhileFiltering.SetEnabled(false)
+		m.keyMap.AcceptWhileFiltering.SetEnabled(false)
 		m.keyMap.ShowFullHelp.SetEnabled(!m.help.ShowAll)
 		m.keyMap.CloseFullHelp.SetEnabled(m.help.ShowAll)
 		m.keyMap.Quit.SetEnabled(true)
@@ -220,12 +335,16 @@ func (m *model) updateKeys() {
 		m.keyMap.GoToEnd.SetEnabled(false)
 		m.keyMap.Search.SetEnabled(false)
 		m.keyMap.ClearSearch.SetEnabled(false)
+		m.keyMap.Filter.SetEnabled(false)
+		m.keyMap.ClearFilter.SetEnabled(false)
 		m.keyMap.Select.SetEnabled(false)
 		m.keyMap.Back.SetEnabled(false)
 		m.keyMap.ToggleWatched.SetEnabled(false)
 		m.keyMap.Refresh.SetEnabled(false)
 		m.keyMap.CancelWhileSearching.SetEnabled(true)
 		m.keyMap.AcceptWhileSearching.SetEnabled(true)
+		m.keyMap.CancelWhileFiltering.SetEnabled(false)
+		m.keyMap.AcceptWhileFiltering.SetEnabled(false)
 		m.keyMap.ShowFullHelp.SetEnabled(false)
 		m.keyMap.CloseFullHelp.SetEnabled(false)
 		m.keyMap.Quit.SetEnabled(false)

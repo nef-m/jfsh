@@ -34,7 +34,11 @@ type model struct {
 	searchInput textinput.Model
 
 	items       []jellyfin.Item
+	allItems    []jellyfin.Item
 	currentItem int
+
+	filterActive bool
+	filterInput  textinput.Model
 
 	currentSeries *jellyfin.Item
 
@@ -50,11 +54,16 @@ func initialModel(client *jellyfin.Client) model {
 	searchInput.Prompt = "Search: "
 	searchInput.Width = 40
 
+	filterInput := textinput.New()
+	filterInput.Prompt = "Filter: "
+	filterInput.Width = 40
+
 	m := model{
 		keyMap:      defaultKeyMap(),
 		help:        help.New(),
 		client:      client,
 		searchInput: searchInput,
+		filterInput: filterInput,
 		spinner:     spinner.New(spinner.WithSpinner(spinner.Dot)),
 		loading:     true,
 	}

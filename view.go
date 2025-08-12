@@ -97,9 +97,17 @@ func (m model) View() string {
 		}
 	}
 
+	{
+		if m.filterActive {
+			v := searchInputStyle.Render(m.filterInput.View())
+			sections = append(sections, v)
+			availHeight -= lipgloss.Height(v)
+		}
+	}
+
 	var helpView string
 	{
-		helpView = m.help.View(m)
+		helpView = m.help.View(m.keyMap)
 		helpView = lipgloss.NewStyle().Margin(0, 0, 0, 2).Render(helpView)
 		availHeight -= lipgloss.Height(helpView)
 	}

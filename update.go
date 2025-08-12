@@ -2,6 +2,7 @@ package main
 
 import (
 	"slices"
+	"strings"
 
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/spinner"
@@ -126,6 +127,33 @@ func (m *model) fetchItems() tea.Cmd {
 	}
 }
 
+func (m *model) applyFilter() {
+	if !m.filterActive || m.filterInput.Value() == "" {
+		m.items = m.allItems
+		if m.currentItem >= len(m.items) {
+			m.currentItem = 0
+		}
+		return
+	}
+
+	filterText := strings.ToLower(m.filterInput.Value())
+	var filtered []jellyfin.Item
+
+	for _, item := range m.allItems {
+		title := strings.ToLower(jellyfin.GetItemTitle(item))
+		desc := strings.ToLower(jellyfin.GetItemDescription(item))
+
+		if strings.Contains(title, filterText) || strings.Contains(desc, filterText) {
+			filtered = append(filtered, item)
+		}
+	}
+
+	m.items = filtered
+	if m.currentItem >= len(m.items) {
+		m.currentItem = 0
+	}
+}
+
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 
@@ -153,10 +181,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.err != nil {
 			m.err = msg.err
 		}
-		m.items = msg.items
-		if m.currentItem >= len(m.items) {
-			m.currentItem = 0
-		}
+		m.allItems = msg.items
+		m.filterInput.SetValue("")
+		m.filterActive = false
+		m.applyFilter()
 		m.updateKeys()
 		return m, nil
 
@@ -188,6 +216,26 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			var cmd tea.Cmd
 			m.searchInput, cmd = m.searchInput.Update(msg)
+			return m, cmd
+		}
+
+		if m.filterInput.Focused() {
+			switch {
+			case key.Matches(msg, m.keyMap.CancelWhileFiltering):
+				m.filterInput.Blur()
+				m.filterInput.SetValue("")
+				m.filterActive = false
+				m.applyFilter()
+				m.updateKeys()
+				return m, nil
+			case key.Matches(msg, m.keyMap.AcceptWhileFiltering):
+				m.filterInput.Blur()
+				m.updateKeys()
+				return m, nil
+			}
+			var cmd tea.Cmd
+			m.filterInput, cmd = m.filterInput.Update(msg)
+			m.applyFilter()
 			return m, cmd
 		}
 
@@ -248,6 +296,18 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.searchInput.SetValue("")
 			m.updateKeys()
 			return m, m.fetchItems()
+
+		case key.Matches(msg, m.keyMap.Filter):
+			m.filterActive = true
+			m.filterInput.Focus()
+			m.updateKeys()
+			return m, nil
+		case key.Matches(msg, m.keyMap.ClearFilter):
+			m.filterInput.SetValue("")
+			m.filterActive = false
+			m.applyFilter()
+			m.updateKeys()
+			return m, nil
 
 		case key.Matches(msg, m.keyMap.Select):
 			item := m.items[m.currentItem]
