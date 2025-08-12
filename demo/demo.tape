@@ -13,29 +13,27 @@ Type `go run . -c demo/demo.yaml` Enter
 Sleep 1s
 Show
 
-
 # Resume
-Sleep 1s
-Screenshot demo/demo.png
+Sleep 0.5s
 Down Sleep 0.2s Down Sleep 0.2s Down Sleep 0.2s
-Down Sleep 0.2s Down Sleep 0.2s Down Sleep 0.2s
-Down Sleep 0.2s Down Sleep 0.2s Down Sleep 0.2s
-
 
 # Next Up
 Right
-Sleep 1s
+Sleep 0.5s
 
 # Recently Added
 Right
-Sleep 1s
+Sleep 0.5s
 Down Sleep 0.2s Down Sleep 0.2s Down Sleep 0.2s
 Down Sleep 0.2s Down Sleep 0.2s Down Sleep 0.2s
-Down Sleep 0.2s Down Sleep 0.2s Down Sleep 0.2s
+Type "/lear"
+Enter
+Sleep 0.5s
 
 # Search
 Right
-Type "/Pioneer"
+Sleep 0.3s
+Type "/pioneer"
 Enter
 Sleep 1s
 Enter
