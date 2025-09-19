@@ -95,3 +95,7 @@ func (c *mpv) playFile(url, title string, start float64) error {
 	}}
 	return c.send(cmd)
 }
+
+func (c *mpv) addSubtitle(url, title, lang string) error {
+	return c.send([]any{"sub-add", url, "auto", title, lang})
+}

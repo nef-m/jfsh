@@ -148,6 +148,17 @@ func Play(client *jellyfin.Client, items []jellyfin.Item, index int) error {
 				slog.Info("got skippable segments", "segments", segments)
 			}
 
+			// load external subtitles
+			subtitles := jellyfin.GetExternalSubtitleStreams(item)
+			for _, subtitle := range subtitles {
+				subtitleURL := client.Host + subtitle.Path
+				if err := mpv.addSubtitle(subtitleURL, subtitle.Title, subtitle.Language); err != nil {
+					slog.Error("failed to add subtitle", "err", err, "title", subtitle.Title, "language", subtitle.Language)
+				} else {
+					slog.Info("added subtitle", "title", subtitle.Title, "language", subtitle.Language)
+				}
+			}
+
 		case "seek":
 			slog.Info("received", "event", response.Event, "item", item.GetName())
 			lastProgressUpdate = time.Time{}

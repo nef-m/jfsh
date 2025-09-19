@@ -107,3 +107,33 @@ func Watched(item Item) bool {
 	}
 	return false
 }
+
+// ExternalSubtitleStream represents an external subtitle stream
+type ExternalSubtitleStream struct {
+	Language string
+	Title    string
+	Path     string
+}
+
+// GetExternalSubtitleStreams returns all external subtitle streams for an item
+func GetExternalSubtitleStreams(item Item) []ExternalSubtitleStream {
+	var subtitles []ExternalSubtitleStream
+	streams := item.GetMediaStreams()
+	for _, stream := range streams {
+		if stream.GetType() == "Subtitle" && stream.GetIsExternal() {
+			index := stream.GetIndex()
+			subtitle := ExternalSubtitleStream{}
+			if lang, ok := stream.GetLanguageOk(); ok && lang != nil {
+				subtitle.Language = *lang
+			}
+			if title, ok := stream.GetDisplayTitleOk(); ok && title != nil {
+				subtitle.Title = *title
+			} else {
+				subtitle.Title = fmt.Sprintf("External %d", index)
+			}
+			subtitle.Path = fmt.Sprintf("/Videos/%s/%s/Subtitles/%d/0/Stream.srt", item.GetId(), item.GetId(), index)
+			subtitles = append(subtitles, subtitle)
+		}
+	}
+	return subtitles
+}

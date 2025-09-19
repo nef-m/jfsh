@@ -7,7 +7,10 @@ import (
 )
 
 func (c *Client) GetResume() ([]Item, error) {
-	res, _, err := c.api.ItemsAPI.GetResumeItems(context.Background()).UserId(c.UserID).Execute()
+	res, _, err := c.api.ItemsAPI.GetResumeItems(context.Background()).
+		UserId(c.UserID).
+		Fields([]api.ItemFields{api.ITEMFIELDS_MEDIA_STREAMS}).
+		Execute()
 	if err != nil {
 		return nil, err
 	}
@@ -16,6 +19,7 @@ func (c *Client) GetResume() ([]Item, error) {
 
 func (c *Client) GetNextUp() ([]Item, error) {
 	res, _, err := c.api.TvShowsAPI.GetNextUp(context.Background()).
+		Fields([]api.ItemFields{api.ITEMFIELDS_MEDIA_STREAMS}).
 		EnableTotalRecordCount(false).
 		DisableFirstEpisode(false).
 		EnableResumable(false).
@@ -31,6 +35,7 @@ func (c *Client) GetRecentlyAdded() ([]Item, error) {
 	res, _, err := c.api.ItemsAPI.GetItems(context.Background()).
 		Recursive(true).
 		IncludeItemTypes([]api.BaseItemKind{api.BASEITEMKIND_MOVIE, api.BASEITEMKIND_SERIES}).
+		Fields([]api.ItemFields{api.ITEMFIELDS_MEDIA_STREAMS}).
 		Limit(100).
 		SortBy([]api.ItemSortBy{api.ITEMSORTBY_DATE_CREATED}).
 		SortOrder([]api.SortOrder{api.SORTORDER_DESCENDING}).
@@ -47,6 +52,7 @@ func (c *Client) GetEpisodes(item Item) ([]Item, error) {
 		seriesID = item.GetId()
 	}
 	res, _, err := c.api.TvShowsAPI.GetEpisodes(context.Background(), seriesID).
+		Fields([]api.ItemFields{api.ITEMFIELDS_MEDIA_STREAMS}).
 		Execute()
 	if err != nil {
 		return nil, err
@@ -59,6 +65,7 @@ func (c *Client) Search(query string) ([]Item, error) {
 		SearchTerm(query).
 		Recursive(true).
 		IncludeItemTypes([]api.BaseItemKind{api.BASEITEMKIND_MOVIE, api.BASEITEMKIND_SERIES}).
+		Fields([]api.ItemFields{api.ITEMFIELDS_MEDIA_STREAMS}).
 		Limit(100).
 		Execute()
 	if err != nil {
