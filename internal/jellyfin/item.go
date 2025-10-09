@@ -31,7 +31,7 @@ func GetResumePosition(item Item) (ticks int64) {
 }
 
 func GetStreamingURL(host string, item Item) string {
-	url := fmt.Sprintf("%s/videos/%s/stream?static=true", host, *item.Id)
+	url := fmt.Sprintf("%s/videos/%s/stream?maxWidth=854&maxHeight=480&videoBitRate=1500000", host, *item.Id)
 	return fmt.Sprintf("edl://%%%d%%%s", len(url), url)
 }
 
